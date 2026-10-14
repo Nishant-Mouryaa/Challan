@@ -1,0 +1,209 @@
+/* ---------- Modal (screen only) ---------- */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modalContent {
+  background: #fff;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 900px;
+  max-height: 92vh;
+  overflow: auto;
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+}
+
+.closeBtn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: #666;
+  z-index: 10;
+  padding: 0;
+}
+.closeBtn:hover { background: #f5f5f5; color: #000; }
+
+.buttonContainer {
+  padding: 1rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  background: #f5f5f5;
+  border-top: 1px solid #ddd;
+}
+.printBtn, .downloadBtn, .closeModalBtn {
+  padding: 0.7rem 1.4rem;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+}
+.printBtn { background: #0066cc; }
+.printBtn:hover { background: #0052a3; }
+.downloadBtn { background: #28a745; }
+.downloadBtn:hover { background: #218838; }
+.closeModalBtn { background: #6c757d; }
+.closeModalBtn:hover { background: #5a6268; }
+
+/* ---------- A4 sheet ---------- */
+.sheet {
+  width: 210mm;
+  height: 297mm;
+  padding: 12mm 14mm;
+  margin: 0 auto;
+  background: #fff;
+  box-sizing: border-box;
+  font-family: Calibri, Carlito, 'Segoe UI', Arial, sans-serif;
+  font-weight: 700;
+  font-size: 10pt;
+  color: #000;
+  line-height: 1.45;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.box {
+  height: 100%;
+  border: 2px solid #000;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.title {
+  text-align: center;
+  font-size: 17pt;
+  padding: 3px 0 2px;
+  border-bottom: 1.5px solid #000;
+}
+
+/* Date / No */
+.metaRow {
+  display: grid;
+  grid-template-columns: 52% 48%;
+  border-bottom: 1.5px solid #000;
+  font-size: 9.5pt;
+}
+.metaCell { padding: 1px 4px; }
+.metaCell:first-child { border-right: 2.5px solid #000; }
+
+/* FROM / TO */
+.partyRow {
+  display: grid;
+  grid-template-columns: 52% 48%;
+  border-bottom: 1.5px solid #000;
+  font-size: 9.5pt;
+}
+.party { padding: 1px 4px 6px; }
+.partyLeft { border-right: 2.5px solid #000; }
+.big { font-size: 11pt; }
+.bigger { font-size: 11.5pt; }
+.normal { font-weight: 400; }
+.pre { white-space: pre-line; }
+
+/* Items */
+.items {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.gridRow {
+  display: grid;
+  grid-template-columns: 6% 10.5% 27% 27% 29.5%;
+}
+.cell {
+  border-right: 1.5px solid #000;
+  padding: 2px 4px;
+  text-align: center;
+  font-size: 9.5pt;
+  overflow-wrap: anywhere;
+}
+.cell:last-child { border-right: none; }
+.cellLeft { text-align: left; }
+
+.headRow { border-bottom: 1.5px solid #000; }
+
+.itemsBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.itemRow:first-child .cell { padding-top: 18px; }
+.itemRow .cell { padding-bottom: 6px; }
+
+.fillerRow { flex: 1; }
+.totalHolder {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0;
+}
+.totalBox {
+  border-top: 1.5px solid #000;
+  padding: 2px 4px;
+  text-align: center;
+}
+
+/* Footer rows */
+.blankRow {
+  height: 6mm;
+  border-top: 1.5px solid #000;
+  border-bottom: 1.5px solid #000;
+}
+.wordsRow {
+  padding: 1px 4px;
+  border-bottom: 1.5px solid #000;
+  font-size: 9.5pt;
+}
+.declaration {
+  padding: 1px 4px;
+  min-height: 30mm;
+  font-size: 9.5pt;
+}
+
+/* ---------- Print ---------- */
+@media print {
+  .modalOverlay {
+    position: static;
+    display: block;
+    background: none;
+    padding: 0;
+  }
+  .modalContent {
+    max-width: none;
+    width: 210mm;
+    max-height: none;
+    overflow: visible;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .closeBtn,
+  .buttonContainer { display: none !important; }
+
+  .sheet {
+    margin: 0;
+    height: 296mm;          /* 1mm short of A4 to avoid a blank 2nd page */
+    page-break-after: avoid;
+    page-break-inside: avoid;
+    overflow: hidden;
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "senders": [
+    {
+      "id": 1,
+      "company": "SR TRADERS",
+      "careOf": "ARYAN EXPRESS SERVICE",
+      "address": "SHOP NO 1 , HANUMAN NAGAR\nCHAKALA , ANDHERI EAST",
+      "area": "",
+      "city": "MUMBAI",
+      "pin": "400093",
+      "state": "MAHARASHTRA",
+      "contactNo": "+91-22-XXXX-XXXX",
+      "email": "andheriechakalsignal.mum@fr.dtdc.com"
+    },
+    {
+      "id": 2,
+      "company": "BRUKER INDIA SCIENTIFIC PVT. LTD.",
+      "careOf": "",
+      "address": "Unit No.609, 6th Floor,\nWest Wing Satellite Gazebo\nGuru Hargovindji Marg\nAndheri Ghatkopar Road",
+      "area": "ANDHERI (E)",
+      "city": "MUMBAI",
+      "pin": "400093",
+      "state": "MAHARASHTRA",
+      "contactNo": "+91-22-XXXX-XXXX",
+      "email": "info@bruker-india.com"
+    }
+  ]
+} 

@@ -1,0 +1,163 @@
+/* ---------- tabs / editor (screen only) ---------- */
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 0.75rem 3.5rem 0.75rem 1rem;
+  background: #fafafa;
+  border-bottom: 1px solid #ddd;
+}
+.tab, .editToggle {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+.tabActive { background: #0066cc; color: #fff; border-color: #0066cc; }
+.editToggle { margin-left: auto; }
+
+.panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #f7f9fc;
+  border-bottom: 1px solid #ddd;
+}
+.field { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.85rem; font-weight: 600; }
+.field input, .field textarea {
+  font: inherit; font-weight: 400; padding: 0.4rem;
+  border: 1px solid #bbb; border-radius: 4px;
+}
+.wide { grid-column: 1 / -1; }
+
+.stage { overflow: auto; background: #e9ecef; padding: 1rem 0; }
+
+/* ---------- A4 sheets ---------- */
+.sheet {
+  width: 210mm;
+  height: 297mm;
+  margin: 0 auto;
+  background: #fff;
+  box-sizing: border-box;
+  color: #000;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+/* inactive tab stays rendered off-screen so "Download both" can capture it */
+.inactive { position: absolute; left: -99999px; top: 0; }
+
+.pre { white-space: pre-line; }
+.center { text-align: center; }
+.italic { font-style: italic; }
+
+/* ---------- Non-Hazardous certificate ---------- */
+.cBox {
+  border: 1.5px solid #000;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 700;
+  font-size: 8.5pt;
+  line-height: 3.7mm;
+}
+.cTitle {
+  text-align: center;
+  font-size: 12pt;
+  line-height: 7mm;
+  border-bottom: 1px solid #000;
+}
+.cAwb {
+  display: grid;
+  grid-template-columns: 32% 43% 25%;
+  min-height: 11.5mm;
+  border-bottom: 1px solid #000;
+}
+.cAwbL { padding: 0 1mm; display: flex; flex-direction: column; justify-content: space-between; }
+.cAwbM { text-align: center; }
+.cAwbR { border-left: 1px solid #000; text-align: center; }
+
+.cStatement {
+  padding: 3mm 33% 0 1mm;
+  min-height: 30mm;
+  box-sizing: border-box;
+  font-size: 8pt;
+  white-space: pre-line;
+}
+.cHead, .cBody {
+  display: grid;
+  grid-template-columns: 31.9% 44.7% 23.4%;
+}
+.cHead { border-top: 1px solid #000; border-bottom: 1px solid #000; }
+.cHead > div { padding: 0 1mm; }
+.cVl { border-left: 1px solid #000; border-right: 1px solid #000; }
+
+.cBody { position: relative; min-height: 89mm; }
+.cLeft { padding: 3.5mm 1mm 0; display: flex; flex-direction: column; }
+.cInv { margin-top: auto; margin-bottom: 24mm; }
+.cMid { padding: 3.5mm 1mm 0; border-left: 1px solid #000; border-right: 1px solid #000; }
+.cRight { padding: 3.5mm 1mm 0; }
+.kgs { margin-left: 4mm; }
+.gap { height: 4mm; }
+
+.cSign {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 39%;
+  height: 26mm;
+  border-top: 1px solid #000;
+  border-left: 1px solid #000;
+  box-sizing: border-box;
+}
+.sRow { display: grid; grid-template-columns: 40% 60%; border-bottom: 1px solid #000; }
+.sLabel { padding: 0 1mm; border-right: 1px solid #000; }
+.sVal, .sStamp { padding: 0 1mm; }
+
+.cFoot {
+  border-top: 1px solid #000;
+  padding: 1mm;
+  font-size: 6.5pt;
+  line-height: 3.4mm;
+  white-space: pre-line;
+}
+
+/* ---------- DHL authorisation letter ---------- */
+.letter {
+  font-family: Calibri, Carlito, 'Segoe UI', Arial, sans-serif;
+  font-size: 10.5pt;
+  line-height: 5mm;
+}
+.lTitle { text-align: center; font-weight: 700; text-decoration: underline; margin-bottom: 4mm; }
+.lSub { text-align: center; font-weight: 700; margin-bottom: 5mm; }
+.lPara { text-align: justify; margin: 0 0 5mm; }
+.lThanks { margin-top: 5mm; }
+.lYours { margin-top: 3mm; }
+.lBoxes { display: flex; justify-content: space-between; margin-top: 8mm; }
+.lBox {
+  width: 70mm;
+  height: 58mm;
+  box-sizing: border-box;
+  border: 1px solid #000;
+  padding: 3mm;
+  font-weight: 700;
+  font-size: 10pt;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* ---------- print ---------- */
+@media print {
+  .noPrint { display: none !important; }
+  .inactive { display: none !important; }
+  .stage { padding: 0; background: none; overflow: visible; }
+  .sheet {
+    margin: 0;
+    height: 296mm;
+    overflow: hidden;
+    page-break-after: avoid;
+    page-break-inside: avoid;
+  }
+}

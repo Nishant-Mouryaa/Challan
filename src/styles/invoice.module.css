@@ -1,0 +1,196 @@
+.sheet {
+  width: 210mm;
+  height: 297mm;
+  padding: 14mm 15mm;
+  margin: 0 auto;
+  background: #fff;
+  box-sizing: border-box;
+  font-family: Calibri, Carlito, 'Segoe UI', Arial, sans-serif;
+  font-size: 10.5pt;
+  line-height: 5.15mm;
+  color: #000;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.box {
+  height: 100%;
+  border: 2.5px solid #000;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.bold { font-weight: 700; }
+.center { text-align: center; }
+.pre { white-space: pre-line; }
+.underline { text-decoration: underline; text-underline-offset: 2px; }
+.gap { display: inline-block; width: 6mm; }
+
+/* ---------- TOP ---------- */
+.top {
+  display: grid;
+  grid-template-columns: 45% 55%;
+  border-bottom: 1.5px solid #000;
+}
+.topLeft { padding: 0; }
+.c2, .c3, .c4, .c5 { border-left: 1.5px solid #000; }
+.consignorBlock {
+  padding: 0 1mm;
+  border-bottom: 1.5px solid #000;
+}
+.consigneeBlock { padding: 0 1mm; }
+
+.topRight {
+  border-left: 1.5px solid #000;
+  display: flex;
+  flex-direction: column;
+}
+.r { border-bottom: 1.5px solid #000; padding: 0 1mm; box-sizing: border-box; }
+.r1 { flex: 45 1 0; padding: 0; }
+.r2 { flex: 68 1 0; }
+.r3 { flex: 22 1 0; white-space: nowrap; }
+.r5 { flex: 67 1 0; }
+.r6 {
+  flex: 67 1 0;
+  display: grid;
+  grid-template-columns: 52% 48%;
+}
+.odCell { padding: 0 1mm; }
+.odCell:first-child { border-right: 1.5px solid #000; }
+.odLabelOrigin { text-align: center; }
+.odValue { font-size: 9pt; text-align: center; }
+
+/* ---------- SHIPMENT STRIP ---------- */
+.ship {
+  display: grid;
+  grid-template-columns: 45% 55%;
+  border-bottom: 2px solid #000;
+}
+.shipLeft {
+  display: grid;
+  grid-template-columns: 45.7% 54.3%;
+  grid-auto-rows: 5.1mm;
+}
+.sc {
+  border-bottom: 1px solid #000;
+  border-right: 1px solid #000;
+  font-size: 8.5pt;
+  line-height: 5.1mm;
+  padding: 0 1mm;
+  white-space: nowrap;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.sc:nth-child(even) { border-right: none; }
+.sc:nth-last-child(-n + 2) { border-bottom: none; }
+.scCenter { text-align: center; }
+
+.shipRight { border-left: 1.5px solid #000; }
+.shipNote {
+  height: 20.4mm;
+  padding: 0 1mm;
+  border-bottom: 1px solid #000;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.shipBlank { height: 5.1mm; }
+
+/* ---------- ITEMS ---------- */
+.items {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.gridRow {
+  display: grid;
+  grid-template-columns: 20.5% 38.4% 14.7% 14.7% 11.7%;
+}
+.c3, .c4, .c5 { border-left: 1.5px solid #000; }
+
+.head {
+  height: 15.2mm;
+  border-bottom: 1.5px solid #000;
+}
+.hCell { padding: 0 1mm; box-sizing: border-box; }
+.hHsn { display: flex; align-items: center; font-size: 11pt; }
+.hDesc { display: flex; align-items: center; font-size: 8.5pt; padding-left: 1mm; }
+.hTop { font-size: 9.5pt; }
+.hCenter { text-align: center; }
+.hCur { text-align: center; margin-top: 1.5mm; }
+
+.itemsBody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.cell {
+  padding: 0 1mm;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+}
+.cCenter { text-align: center; }
+.cRight { text-align: right; padding-right: 1.5mm; }
+.itemRow:first-child .cell { padding-top: 13mm; }
+.itemRow .cell { padding-bottom: 2mm; }
+
+.fillerRow { flex: 1; min-height: 0; }
+.notesCell {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 3mm;
+}
+.noteBlock { margin-top: 2mm; }
+.noteMain { margin-bottom: 2.5mm; }
+.noteLine { line-height: 5.6mm; }
+
+/* ---------- TOTAL ---------- */
+.foot {
+  display: grid;
+  grid-template-columns: 88.3% 11.7%;
+  border-top: 2px solid #000;
+  border-bottom: 1.5px solid #000;
+}
+.footLeft { display: flex; flex-direction: column; }
+.words {
+  height: 5.8mm;
+  line-height: 5.8mm;
+  font-size: 8.5pt;
+  padding: 0 1mm;
+  border-bottom: 1.5px solid #000;
+  white-space: nowrap;
+}
+.blank { height: 5.3mm; }
+.totalCell {
+  border-left: 1.5px solid #000;
+  text-align: right;
+  padding: 0.6mm 1.5mm;
+  font-size: 10pt;
+}
+
+/* ---------- DECLARATION ---------- */
+.decl {
+  display: grid;
+  grid-template-columns: 58.8% 41.2%;
+  height: 10.4mm;
+  font-size: 8.5pt;
+  line-height: 4.2mm;
+}
+.declLeft { padding: 0.5mm 1mm; }
+.declRight { border-left: 1.5px solid #000; padding: 0.5mm 1mm; }
+.forLabel { font-size: 9.5pt; }
+
+/* ---------- PRINT ---------- */
+@media print {
+  .sheet {
+    margin: 0;
+    height: 296mm;
+    overflow: hidden;
+    page-break-after: avoid;
+    page-break-inside: avoid;
+  }
+}   

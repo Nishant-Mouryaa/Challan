@@ -1,0 +1,127 @@
+.pre { white-space: pre-line; }
+.center { text-align: center; }
+.right { text-align: right; }
+.u { text-decoration: underline; }
+.b { font-weight: 700; }
+.reg { font-weight: 400; }
+.plain { font-weight: 400 !important; text-decoration: underline; }
+.tick { display: inline-block; width: 3.2mm; height: 3.2mm; border: 1px solid #000; text-align: center; line-height: 3mm; font-size: 7pt; font-weight: 700; vertical-align: middle; }
+
+/* ================= PACKING LIST ================= */
+.pBox { border: 1.5px solid #000; font-family: Calibri, Carlito, Arial, sans-serif; font-weight: 700; font-size: 9.5pt; line-height: 4.3mm; display: flex; flex-direction: column; }
+.pTop { display: grid; grid-template-columns: 49.7% 50.3%; border-bottom: 1px solid #000; }
+.pLeft { display: flex; flex-direction: column; }
+.lr { display: grid; grid-template-columns: 30.1% 69.9%; }
+.lr > div:first-child { padding: 0 1mm; }
+.lrTop { border-top: 1px solid #000; }
+.lv { border-left: 1px solid #000; padding: 0 1mm; }
+.pRight { border-left: 1px solid #000; display: flex; flex-direction: column; }
+.rr { border-bottom: 1px solid #000; padding: 0 1mm; box-sizing: border-box; }
+.rr:last-child { border-bottom: none; }
+.r1 { flex: 38 1 0; display: grid; grid-template-columns: 64% 36%; padding: 0; }
+.invL { padding: 0 1mm; }
+.invR { border-left: 1px solid #000; padding-top: 4.3mm; text-align: center; }
+.r2 { flex: 33 1 0; } .r3 { flex: 33 1 0; } .r4 { flex: 53 1 0; }
+.r5 { flex: 138 1 0; text-align: center; padding-top: 5mm; }
+.r5v { margin-top: 4.3mm; }
+.r6 { flex: 50 1 0; display: grid; grid-template-columns: 43% 57%; padding: 0; text-align: center; }
+.r6 > div:first-child { border-right: 1px solid #000; }
+
+.pMid { display: grid; grid-template-columns: 49.7% 50.3%; height: 30.5mm; border-bottom: 1px solid #000; }
+.mLeft { display: flex; flex-direction: column; }
+.mRow { display: grid; grid-template-columns: 48.8% 51.2%; border-bottom: 1px solid #000; }
+.mRow:last-child { border-bottom: none; }
+.mRow > div { padding: 0 1mm; }
+.mRow > div:last-child { border-left: 1px solid #000; }
+.m1 { flex: 122 1 0; } .m2 { flex: 91 1 0; } .m3 { flex: 86 1 0; }
+.mRight { border-left: 1px solid #000; }
+.mHead { border-bottom: 1px solid #000; padding: 0 1mm; }
+.mPad { padding: 0 1mm; }
+.payT { margin-top: 8mm; }
+
+.gHead { display: grid; grid-template-columns: 15% 9.3% 47.6% 10% 18.1%; border-bottom: 1px solid #000; min-height: 8.9mm; }
+.gHead > div { padding: 0 1mm; align-self: end; }
+.gHead > div:nth-child(-n + 3) { border-right: 1px solid #000; align-self: stretch; display: flex; flex-direction: column; justify-content: flex-end; }
+.gh2 { grid-column: 2 / 4; text-align: center; }
+.gBody { display: flex; flex-direction: column; flex: 1; min-height: 61mm; }
+.gRow { display: grid; grid-template-columns: 15% 9.3% 47.6% 10% 18.1%; }
+.gc { border-right: 1px solid #000; text-align: center; padding: 0 1mm; }
+.gc:last-child { border-right: none; text-align: right; }
+.gRow:first-child .gc { padding-top: 9mm; }
+.gFill { flex: 1; position: relative; }
+.gFill .gc { padding-top: 0 !important; }
+.wBox { position: absolute; left: 0; bottom: 0; width: 49.7%; background: #fff; border-top: 1px solid #000; border-right: 1px solid #000; }
+.wRow { display: grid; grid-template-columns: 30.2% 18.7% 51.1%; text-align: center; }
+.wRow > :nth-child(-n + 2) { border-right: 1px solid #000; }
+.wRow > :last-child { text-align: left; padding-left: 1mm; }
+
+.pFoot { border-top: 1px solid #000; display: grid; grid-template-columns: 71.8% 28.2%; min-height: 26mm; }
+.fLeft { display: flex; flex-direction: column; justify-content: flex-end; padding: 0 1mm 0.5mm; }
+.fRight { display: flex; flex-direction: column; }
+.fTotal { text-align: right; padding: 0 0.5mm; }
+.sign { flex: 1; border-top: 1px solid #000; border-left: 1px solid #000; padding: 0 1mm; display: flex; flex-direction: column; }
+.signBot { margin-top: auto; text-align: center; }
+
+/* ================= DHL SLI ================= */
+.sBox { border: 1.5px solid #000; font-family: Arial, Helvetica, sans-serif; font-size: 7.5pt; line-height: 3.5mm; }
+.yel { background: #ffc000; font-weight: 700; padding: 0 1mm; }
+.yTop { height: 4mm; }
+.yMid { height: 3mm; border-top: 1px solid #000; border-bottom: 1px solid #000; }
+.yRow { border-top: 1px solid #000; border-bottom: 1px solid #000; }
+.hdr { display: grid; grid-template-columns: 12.5% 49.9% 8.6% 29%; font-weight: 700; }
+.hdr > div { border-bottom: 1px solid #000; border-right: 1px solid #000; padding: 0 1mm; }
+.hdr > div:nth-child(4n) { border-right: none; }
+.kv { display: grid; grid-template-columns: 42.9% 57.1%; border-bottom: 1px solid #000; font-weight: 700; }
+.kv > div:first-child { padding: 0 1mm; border-right: 1px solid #000; }
+.kv > div:last-child { text-align: center; padding: 0 1mm; }
+.bot > div { align-self: end; }
+.botLabel { align-self: end; }
+.left > div:last-child { text-align: left; }
+.gstin { display: grid; grid-template-columns: 60% 20% 20%; padding: 0 !important; }
+.gstin > div { border-right: 1px solid #000; padding: 0 1mm; font-weight: 400; text-align: left; }
+.gstin > div:last-child { border-right: none; }
+.rod { display: grid; grid-template-columns: 29.7% 5% 15.3% 9% 12.8% 8.6% 15.8% 3.8%; padding: 0 !important; text-align: left !important; font-weight: 400; font-size: 7pt; line-height: 3.2mm; }
+.rod > div { border-right: 1px solid #000; padding: 0 1mm; }
+.rod > div:last-child { border-right: none; }
+.k3 { display: grid; grid-template-columns: 28.7% 2.6% 68.7%; border-bottom: 1px solid #000; min-height: 3.6mm; }
+.k3 > div { padding: 0 1mm; }
+.k3 > div:nth-child(-n + 2) { border-right: 1px solid #000; }
+.k3v { text-align: center; font-weight: 700; padding: 0 !important; }
+.cat, .cat2 { display: grid; padding: 0 !important; text-align: left; font-weight: 400; }
+.cat { grid-template-columns: 9.7% 7.1% 24.3% 4.1% 54.8%; }
+.cat2 { grid-template-columns: 9.7% 7.1% 24.3% 4.1% 38.4% 16.4%; }
+.cat > div, .cat2 > div { border-right: 1px solid #000; padding: 0 1mm; }
+.cat > div:last-child, .cat2 > div:last-child { border-right: none; }
+.special { min-height: 8.5mm; padding: 0 1mm; border-bottom: 1px solid #000; }
+.sbH { display: grid; grid-template-columns: 37.3% 62.7%; border-top: none; }
+.sb { display: grid; grid-template-columns: 31.3% 6% 62.7%; border-bottom: 1px solid #000; min-height: 5.1mm; }
+.sb > div { padding: 0 1mm; align-self: end; }
+.sb > div:nth-child(-n + 2) { border-right: 1px solid #000; }
+.dk { display: grid; grid-template-columns: 31.7% 39.6% 28.7%; border-bottom: 1px solid #000; }
+.dk > div { padding: 0 1mm; }
+.dkItem { display: grid; grid-template-columns: 1fr 14mm; align-items: center; }
+.auth { font-weight: 700; padding: 0 1mm; border-bottom: 1px solid #000; }
+.notes { display: grid; grid-template-columns: 74.3% 25.7%; }
+.notes > div:first-child { border-right: 1px solid #000; padding: 0 1mm; }
+.noteSign { align-self: end; text-align: center; }
+
+/* ================= ANNEXURE-A ================= */
+.aWrap { font-family: 'Times New Roman', Times, serif; font-size: 10.5pt; line-height: 5mm; color: #000; }
+.aTitle { text-align: center; font-weight: 700; font-size: 14pt; text-decoration: underline; margin-bottom: 5mm; }
+.aSub { text-align: center; margin-bottom: 6mm; }
+.aRule { font-size: 10pt; margin: 0 0 9mm -4mm; }
+.aInd { margin-left: 17mm; }
+.aGap { margin-top: 5mm; }
+.aSmall { margin: 0 0 6mm 11mm; font-size: 8pt; line-height: 4mm; white-space: pre-wrap; }
+.aDeclH { margin: 8mm 0 3mm 12mm; font-weight: 700; text-decoration: underline; font-size: 10pt; }
+.aDecl { margin: 0 0 5mm 11mm; font-size: 10pt; white-space: pre-line; }
+.aCo { text-align: center; margin-top: 20mm; font-size: 10pt; }
+.aCo + .aCo { margin-top: 12mm; }
+
+/* ================= NON-SCOMET ================= */
+.nWrap { font-family: Arial, Helvetica, sans-serif; font-size: 11pt; line-height: 5.2mm; color: #000; }
+.nTitle { text-align: center; font-size: 14pt; text-decoration: underline; margin: 12mm 0 14mm; }
+.nRef { margin-bottom: 6mm; }
+.nPara { text-align: justify; margin: 0 0 5mm; }
+.nThanks { margin-top: 12mm; }
+.nYours { margin-top: 18mm; }

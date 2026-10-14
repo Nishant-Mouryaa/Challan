@@ -1,0 +1,105 @@
+/**
+ * Print stylesheet for Delivery Challan
+ * Optimized for A4 paper size printing
+ */
+
+@page {
+  size: A4;
+  margin: 12mm 12mm 12mm 12mm;
+}
+
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html {
+    font-size: 11pt;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    width: 210mm;
+    height: 297mm;
+    background: white;
+    color: #000;
+  }
+
+  .print-page {
+    width: 210mm;
+    height: 297mm;
+    padding: 12mm;
+    page-break-after: always;
+    box-sizing: border-box;
+    background: white;
+    overflow: hidden;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  /* Headings */
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* Page breaks */
+  .page-break {
+    page-break-after: always;
+    break-after: page;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    background-color: #f0f0f0 !important;
+    border: 1px solid #000 !important;
+    padding: 6pt !important;
+    font-weight: bold;
+    text-align: left;
+  }
+
+  td {
+    border: 1px solid #000 !important;
+    padding: 6pt !important;
+  }
+
+  /* Hide navigation and controls */
+  nav,
+  .navbar,
+  .footer,
+  button,
+  input,
+  textarea,
+  select {
+    display: none !important;
+  }
+
+  /* Text */
+  p {
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  /* Preserve layout */
+  .challan-container {
+    page-break-inside: avoid;
+  }
+
+  /* Prevent breaks in critical sections */
+  .challan-header,
+  .challan-from-to,
+  .challan-items,
+  .challan-footer {
+    page-break-inside: avoid;
+  }
+}
