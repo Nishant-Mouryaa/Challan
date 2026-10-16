@@ -81,16 +81,20 @@ const InternationalInvoicePreview = ({ invoiceData, onClose }) => {
             {/* ---------- TOP: consignor / consignee | invoice info ---------- */}
             <div className={s.top}>
               <div className={s.topLeft}>
-  <div className={s.consignorBlock}>
-    <div className={s.bold}>CONSIGNOR</div>
-    <div>{consignor.company}</div>
-    <div>{consignor.address}</div>
-    <div>{consignor.building}</div>
-    <div>
-      {consignor.area} , TEL NO :{consignor.phone}
-    </div>
-    <div>GSTIN:{consignor.gstin}</div>
+ <div className={s.consignorBlock}>
+  <div className={s.bold}>CONSIGNOR</div>
+  <div>{consignor.company}</div>
+  <div>{consignor.address}</div>
+  <div>{consignor.building}</div>
+  <div>
+    {consignor.area} , TEL NO :{consignor.phone}
   </div>
+  {(consignor.idType || 'gstin') === 'gstin' ? (
+    <div>GSTIN:{consignor.gstin}</div>
+  ) : (
+    <div>AADHAAR CARD NO:{consignor.aadhaar}</div>
+  )}
+</div>
 
   <div className={s.consigneeBlock}>
     <div className={s.bold}>CONSIGNEE</div>

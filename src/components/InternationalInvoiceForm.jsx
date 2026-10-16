@@ -196,16 +196,77 @@ onChange={(e) =>
             />
           </div>
         </div>
+<div className={styles.formRow}>
+  <div className={styles.formControl}>
+    <label>ID Proof Type</label>
+    <div style={{ display: 'flex', gap: '1.5rem', paddingTop: '0.65rem' }}>
+      <label
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.4rem',
+          cursor: 'pointer',
+          fontWeight: 'normal',
+        }}
+      >
+        <input
+          type="radio"
+          name="consignorIdType"
+          value="gstin"
+          checked={(invoiceData.consignorDetails.idType || 'gstin') === 'gstin'}
+          onChange={() => updateConsignorDetails({ idType: 'gstin' })}
+        />
+        GSTIN
+      </label>
+      <label
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.4rem',
+          cursor: 'pointer',
+          fontWeight: 'normal',
+        }}
+      >
+        <input
+          type="radio"
+          name="consignorIdType"
+          value="aadhaar"
+          checked={invoiceData.consignorDetails.idType === 'aadhaar'}
+          onChange={() => updateConsignorDetails({ idType: 'aadhaar' })}
+        />
+        Aadhaar Card No.
+      </label>
+    </div>
+  </div>
 
-        <div className={styles.formControl}>
-          <label>GSTIN</label>
-          <input
-            type="text"
-            value={invoiceData.consignorDetails.gstin}
-            onChange={(e) => updateConsignorDetails({ gstin: e.target.value })}
-            className={styles.formControl}
-          />
-        </div>
+  <div className={styles.formControl}>
+    <label>
+      {(invoiceData.consignorDetails.idType || 'gstin') === 'gstin'
+        ? 'GSTIN'
+        : 'Aadhaar Card No.'}
+    </label>
+    <input
+      type="text"
+      value={
+        (invoiceData.consignorDetails.idType || 'gstin') === 'gstin'
+          ? invoiceData.consignorDetails.gstin || ''
+          : invoiceData.consignorDetails.aadhaar || ''
+      }
+      onChange={(e) =>
+        (invoiceData.consignorDetails.idType || 'gstin') === 'gstin'
+          ? updateConsignorDetails({ gstin: e.target.value })
+          : updateConsignorDetails({ aadhaar: e.target.value })
+      }
+      placeholder={
+        (invoiceData.consignorDetails.idType || 'gstin') === 'gstin'
+          ? 'e.g., 27AAACB2346K1ZR'
+          : 'e.g., 1234 5678 9012'
+      }
+      className={styles.formControl}
+      maxLength={(invoiceData.consignorDetails.idType || 'gstin') === 'gstin' ? 15 : 14}
+    />
+  </div>
+</div>
       </fieldset>
 
       {/* Consignee Details */}

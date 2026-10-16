@@ -8,15 +8,15 @@ export const CONSIGNORS = [
         address: '609,6TH FLOOR ,WEST WING,',
         building: 'SATELITE GAZEBO BUILDING',
         area: 'ANDHERI EAST',
-          pin: '400093',
-
+        pin: '400093',
         phone: '022 61128840',
         gstin: '27AAACB2346K1ZR',
+        aadhaar: '',          // <-- new
+        idType: 'gstin',      // <-- new ('gstin' | 'aadhaar')
       },
     },
   },
 ];
-
 export const CONSIGNEES = [
   {
     id: 'bruker-axs',
@@ -129,6 +129,5 @@ export const buildInitialInvoice = () => {
     ...DECLARATIONS[0].data,
     items: [first],
     totalAmount: first.amount,
-
   };
 };
