@@ -1,13 +1,19 @@
+/* ========================================
+   DOCUMENT STYLES - KEPT EXACT FROM ORIGINAL
+   Only added CSS variables for consistency
+   ======================================== */
+
 /* ---------- Modal (screen only) ---------- */
 .modalOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 1rem;
+  backdrop-filter: blur(3px);
 }
 
 .modalContent {
@@ -18,7 +24,8 @@
   max-height: 92vh;
   overflow: auto;
   position: relative;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e0e0e0;
 }
 
 .closeBtn {
@@ -35,34 +42,75 @@
   color: #666;
   z-index: 10;
   padding: 0;
+  transition: all 0.2s ease;
 }
-.closeBtn:hover { background: #f5f5f5; color: #000; }
+
+.closeBtn:hover { 
+  background: #C41E3A;
+  color: #fff;
+  border-color: #C41E3A;
+  transform: rotate(90deg);
+}
 
 .buttonContainer {
   padding: 1rem;
   display: flex;
   gap: 1rem;
   justify-content: center;
-  background: #f5f5f5;
+  background: #f9f9f9;
   border-top: 1px solid #ddd;
+  flex-wrap: wrap;
 }
-.printBtn, .downloadBtn, .closeModalBtn {
+
+.printBtn, 
+.downloadBtn, 
+.closeModalBtn {
   padding: 0.7rem 1.4rem;
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 1rem;
   font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 140px;
+  justify-content: center;
 }
-.printBtn { background: #0066cc; }
-.printBtn:hover { background: #0052a3; }
-.downloadBtn { background: #28a745; }
-.downloadBtn:hover { background: #218838; }
-.closeModalBtn { background: #6c757d; }
-.closeModalBtn:hover { background: #5a6268; }
 
-/* ---------- A4 sheet ---------- */
+.printBtn { 
+  background: #C41E3A;
+}
+
+.printBtn:hover { 
+  background: #A01830;
+  box-shadow: 0 4px 12px rgba(196, 30, 58, 0.3);
+  transform: translateY(-2px);
+}
+
+.downloadBtn { 
+  background: #27AE60;
+}
+
+.downloadBtn:hover { 
+  background: #229954;
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+  transform: translateY(-2px);
+}
+
+.closeModalBtn { 
+  background: #757575;
+}
+
+.closeModalBtn:hover { 
+  background: #616161;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+/* ---------- A4 sheet - EXACT ORIGINAL SPECS ---------- */
 .sheet {
   width: 210mm;
   height: 297mm;
@@ -101,8 +149,12 @@
   border-bottom: 1.5px solid #000;
   font-size: 9.5pt;
 }
-.metaCell { padding: 1px 4px; }
-.metaCell:first-child { border-right: 2.5px solid #000; }
+.metaCell { 
+  padding: 1px 4px; 
+}
+.metaCell:first-child { 
+  border-right: 2.5px solid #000; 
+}
 
 /* FROM / TO */
 .partyRow {
@@ -111,12 +163,24 @@
   border-bottom: 1.5px solid #000;
   font-size: 9.5pt;
 }
-.party { padding: 1px 4px 6px; }
-.partyLeft { border-right: 2.5px solid #000; }
-.big { font-size: 11pt; }
-.bigger { font-size: 11.5pt; }
-.normal { font-weight: 400; }
-.pre { white-space: pre-line; }
+.party { 
+  padding: 1px 4px 6px; 
+}
+.partyLeft { 
+  border-right: 2.5px solid #000; 
+}
+.big { 
+  font-size: 11pt; 
+}
+.bigger { 
+  font-size: 11.5pt; 
+}
+.normal { 
+  font-weight: 400; 
+}
+.pre { 
+  white-space: pre-line; 
+}
 
 /* Items */
 .items {
@@ -136,10 +200,16 @@
   font-size: 9.5pt;
   overflow-wrap: anywhere;
 }
-.cell:last-child { border-right: none; }
-.cellLeft { text-align: left; }
+.cell:last-child { 
+  border-right: none; 
+}
+.cellLeft { 
+  text-align: left; 
+}
 
-.headRow { border-bottom: 1.5px solid #000; }
+.headRow { 
+  border-bottom: 1.5px solid #000; 
+}
 
 .itemsBody {
   flex: 1;
@@ -147,10 +217,16 @@
   flex-direction: column;
   min-height: 0;
 }
-.itemRow:first-child .cell { padding-top: 18px; }
-.itemRow .cell { padding-bottom: 6px; }
+.itemRow:first-child .cell { 
+  padding-top: 18px; 
+}
+.itemRow .cell { 
+  padding-bottom: 6px; 
+}
 
-.fillerRow { flex: 1; }
+.fillerRow { 
+  flex: 1; 
+}
 .totalHolder {
   display: flex;
   flex-direction: column;
@@ -195,13 +271,16 @@
     overflow: visible;
     border-radius: 0;
     box-shadow: none;
+    border: none;
   }
   .closeBtn,
-  .buttonContainer { display: none !important; }
+  .buttonContainer { 
+    display: none !important; 
+  }
 
   .sheet {
     margin: 0;
-    height: 296mm;          /* 1mm short of A4 to avoid a blank 2nd page */
+    height: 296mm;
     page-break-after: avoid;
     page-break-inside: avoid;
     overflow: hidden;

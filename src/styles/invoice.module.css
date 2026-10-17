@@ -207,3 +207,10 @@
     page-break-inside: avoid;
   }
 }   
+
+.printBtn { background: #C41E3A; }
+.printBtn:hover { background: #A01830; }
+.downloadBtn { background: #27AE60; }
+.downloadBtn:hover { background: #229954; }
+.closeModalBtn { background: #757575; }
+.closeModalBtn:hover { background: #616161; }
