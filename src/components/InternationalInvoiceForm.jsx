@@ -5,6 +5,9 @@ import InternationalInvoicePreview from './InternationalInvoicePreview';
 import PresetSelectors from './PresetSelectors';
 import { useInternationalInvoice } from '../hooks/useInternationalInvoice';
 import ExportDocumentsModal from './ExportDocumentsModal';
+import InvoiceModeSelector from './InvoiceModeSelector';
+import ModeDetails from './ModeDetails';
+import { getMode } from '../data/invoiceModes';
 
 const InternationalInvoiceForm = () => {
   const {
@@ -15,6 +18,8 @@ const InternationalInvoiceForm = () => {
     addItem,
     removeItem,
     updateItem,
+    applyMode,
+    updateModeDetails,
     saveInvoice,
     resetForm,
     getTotalAmount,
@@ -25,6 +30,7 @@ const InternationalInvoiceForm = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
 const [showDocs, setShowDocs] = useState(false);
+  const mode = getMode(invoiceData.mode);
 
   const handleSave = async () => {
     setLoading(true);
@@ -55,7 +61,13 @@ const [showDocs, setShowDocs] = useState(false);
           {successMessage}
         </div>
       )}
-<PresetSelectors onPick={updateInvoiceData} />
+<InvoiceModeSelector value={invoiceData.mode} onChange={applyMode} />
+      <ModeDetails
+        mode={invoiceData.mode}
+        details={invoiceData.modeDetails}
+        onChange={updateModeDetails}
+      />
+      <PresetSelectors onPick={updateInvoiceData} />
 
       {/* Invoice Details */}
       <fieldset className={styles.fieldset}>
@@ -452,6 +464,7 @@ onChange={(e) =>
       <fieldset className={styles.fieldset}>
         <legend className={styles.legend}>Line Items</legend>
         <InternationalInvoiceItems
+          modeId={invoiceData.mode}
           items={invoiceData.items}
           onItemChange={updateItem}
           onAddItem={addItem}
@@ -489,7 +502,7 @@ onChange={(e) =>
   className="btn btn-primary"
   disabled={loading || !invoiceData.invoiceNo || !invoiceData.consigneeDetails.name}
 >
-  Certificate & Authorisation
+  Documents ({mode.docs.length})
 </button>
         <button
           type="button"
@@ -519,6 +532,7 @@ onChange={(e) =>
       {showDocs && (
   <ExportDocumentsModal
     invoiceData={invoiceData}
+    recommendedDocs={mode.docs}
     onClose={() => setShowDocs(false)}
   />
 )}

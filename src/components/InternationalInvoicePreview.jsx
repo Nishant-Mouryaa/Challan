@@ -36,6 +36,11 @@ const InternationalInvoicePreview = ({ invoiceData, onClose }) => {
   const consignor = invoiceData.consignorDetails || {};
   const consignee = invoiceData.consigneeDetails || {};
   const currency = invoiceData.currencyCode || '';
+  // commercial invoices must not fall back to the "no commercial value" note
+  const shipmentNote =
+    invoiceData.mode === 'commercial'
+      ? invoiceData.shipmentNotes || ''
+      : invoiceData.shipmentNotes || DEFAULT_SHIPMENT_NOTE;
   const itemsWithNotes = items.filter(
     (i) => i.returnOrder || i.actualWeight || i.volWeight
   );
@@ -194,7 +199,7 @@ DATE:{formatDate(invoiceData.invoiceDate)}                  </div>
               </div>
               <div className={s.shipRight}>
                 <div className={`${s.shipNote} ${s.pre}`}>
-                  {invoiceData.shipmentNotes || DEFAULT_SHIPMENT_NOTE}
+                  {shipmentNote}
                 </div>
                 <div className={s.shipBlank} />
               </div>
@@ -237,7 +242,10 @@ DATE:{formatDate(invoiceData.invoiceDate)}                  </div>
           <div key={i} className={`${s.gridRow} ${s.itemRow}`}>
             <div className={`${s.cell} ${s.cCenter}`}>{item.sr}</div>
             <div className={`${s.cell} ${s.cHsn} ${s.cCenter}`}>{item.hsnCode}</div>
-            <div className={`${s.cell} ${s.c2}`}>{item.description}</div>
+            <div className={`${s.cell} ${s.c2}`}>
+              {item.description}
+              {item.details && <div className={s.pre}>{item.details}</div>}
+            </div>
             <div className={`${s.cell} ${s.c3} ${s.cCenter}`}>{item.quantity}</div>
             <div className={`${s.cell} ${s.c4} ${s.cRight}`}>{fmt(item.ratePerPiece)}</div>
             <div className={`${s.cell} ${s.c5} ${s.cRight}`}>{fmt(item.amount)}</div>

@@ -4,6 +4,7 @@ import {
   SB_TYPES, SLI_DOCS,
   buildPackingListDefaults, buildSliDefaults, buildAnnexureDefaults, buildNonScometDefaults,
 } from '../utils/exportDocuments';
+import { MODE_DOCS, overlayCommercial } from './extraDocsModes';
 
 const lines = (s) => (s || '').split('\n');
 const Tick = ({ on }) => <span className={x.tick}>{on ? '✓' : ''}</span>;
@@ -472,11 +473,11 @@ const indemnityFields = [
 
 /* =============== REGISTRY =============== */
 export const EXTRA_DOCS = [
-  { id: 'packing', label: 'Packing List', file: 'Packing-List', build: buildPackingListDefaults,
+  { id: 'packing', label: 'Packing List', file: 'Packing-List', build: (data) => overlayCommercial('packing', buildPackingListDefaults(data), data),
     fields: packingFields, Sheet: PackingListSheet, side: 12, margins: { top: 12, bottom: 10 }, letterhead: false },
-  { id: 'sli', label: 'DHL SLI', file: 'DHL-SLI', build: buildSliDefaults,
+  { id: 'sli', label: 'DHL SLI', file: 'DHL-SLI', build: (data) => overlayCommercial('sli', buildSliDefaults(data), data),
     fields: sliFields, Sheet: SliSheet, side: 6, margins: { top: 8, bottom: 8 }, letterhead: false },
-  { id: 'annexure', label: 'Annexure-A', file: 'Annexure-A', build: buildAnnexureDefaults,
+  { id: 'annexure', label: 'Annexure-A', file: 'Annexure-A', build: (data) => overlayCommercial('annexure', buildAnnexureDefaults(data), data),
     fields: annexureFields, Sheet: AnnexureSheet, side: 20, margins: { top: 20, bottom: 15 }, letterhead: true },
   { id: 'scomet', label: 'Non-SCOMET Declaration', file: 'Non-SCOMET-Declaration', build: buildNonScometDefaults,
     fields: scometFields, Sheet: NonScometSheet, side: 25, margins: { top: 20, bottom: 15 }, letterhead: true },
@@ -515,4 +516,7 @@ export const EXTRA_DOCS = [
       };
     },
     fields: indemnityFields, Sheet: IndemnitySheet, side: 20, margins: { top: 20, bottom: 20 }, letterhead: true },
+
+  // --- MODE DOCUMENTS (medicine, electronics) ---
+  ...MODE_DOCS,
 ];
