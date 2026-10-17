@@ -41,7 +41,7 @@
   background: var(--color-white);
   border-right: 1px solid var(--color-border-light);
   transform: translateX(-100%);
-  transition: transform var(--transition-base);
+  transition: width var(--transition-base), transform var(--transition-base);
   overflow-y: auto;
 }
 
@@ -117,6 +117,33 @@
 
 .closeMobileBtn:hover {
   background: var(--color-gray-100);
+}
+
+.collapseSidebarBtn {
+  display: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.collapseSidebarBtn:hover {
+  background: var(--color-gray-100);
+  color: var(--color-text-primary);
+}
+
+.collapseSidebarBtn:focus-visible {
+  outline: 2px solid var(--color-red-primary);
+  outline-offset: 1px;
+}
+
+.collapseIconExpanded {
+  transform: rotate(180deg);
 }
 
 .sidebarNav {
@@ -237,6 +264,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  transition: margin-left var(--transition-base);
 }
 
 .header {
@@ -609,9 +637,17 @@ a.actionRow:hover .actionCta {
 /* ---------- Desktop: persistent sidebar ---------- */
 
 @media (min-width: 1024px) {
+  .mainLayoutCollapsed {
+    --sidebar-width: 76px;
+  }
+
   .sidebar {
     transform: none;
     box-shadow: none;
+  }
+
+  .collapseSidebarBtn {
+    display: grid;
   }
 
   .sidebarOverlay,
@@ -622,6 +658,47 @@ a.actionRow:hover .actionCta {
 
   .mainContent {
     margin-left: var(--sidebar-width);
+  }
+
+  .sidebarCollapsed .sidebarHeader {
+    height: auto;
+    min-height: var(--header-height);
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 0;
+  }
+
+  .sidebarCollapsed .brandText,
+  .sidebarCollapsed .navLabel,
+  .sidebarCollapsed .navLabelText,
+  .sidebarCollapsed .footerLink span,
+  .sidebarCollapsed .version {
+    display: none;
+  }
+
+  .sidebarCollapsed .sidebarNav {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .sidebarCollapsed .navItem {
+    justify-content: center;
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .sidebarCollapsed .sidebarFooter {
+    justify-content: center;
+    padding: var(--spacing-md) 0;
+  }
+
+  .sidebarCollapsed .footerLink {
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    margin: 0;
   }
 
   .panelGrid {

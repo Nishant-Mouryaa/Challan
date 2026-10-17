@@ -31,7 +31,7 @@ const navGroups = [
   },
 ];
 
-const Sidebar = ({ isOpen, setIsOpen }) => {
+const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
   const router = useRouter();
 
   const isActive = (item) =>
@@ -43,10 +43,14 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         <div className={styles.sidebarOverlay} onClick={() => setIsOpen(false)} />
       )}
 
-      <aside className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`}>
+      <aside
+        className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''} ${
+          isCollapsed ? styles.sidebarCollapsed : ''
+        }`}
+      >
         <div className={styles.sidebarHeader}>
           <div className={styles.brand}>
-            <span className={styles.brandMark}>
+            <span className={styles.brandMark} title="DC System">
               <Icon name="package" size={18} />
             </span>
             <span className={styles.brandText}>
@@ -54,6 +58,20 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               <span className={styles.brandSub}>Challan management</span>
             </span>
           </div>
+          <button
+            className={styles.collapseSidebarBtn}
+            onClick={() => setIsCollapsed((collapsed) => !collapsed)}
+            type="button"
+            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-expanded={!isCollapsed}
+            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <Icon
+              name="chevron"
+              size={18}
+              className={isCollapsed ? '' : styles.collapseIconExpanded}
+            />
+          </button>
           <button
             className={styles.closeMobileBtn}
             onClick={() => setIsOpen(false)}
@@ -76,6 +94,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                     href={item.href}
                     className={`${styles.navItem} ${active ? styles.navItemActive : ''}`}
                     aria-current={active ? 'page' : undefined}
+                    title={isCollapsed ? item.label : undefined}
                     onClick={() => setIsOpen(false)}
                   >
                     <Icon name={item.icon} size={18} className={styles.navIcon} />
@@ -88,7 +107,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         </nav>
 
         <div className={styles.sidebarFooter}>
-          <button className={styles.footerLink} type="button">
+          <button
+            className={styles.footerLink}
+            type="button"
+            aria-label="Contact support"
+            title={isCollapsed ? 'Contact support' : undefined}
+          >
             <Icon name="phone" size={16} />
             <span>Contact support</span>
           </button>
