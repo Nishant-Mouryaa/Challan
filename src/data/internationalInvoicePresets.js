@@ -124,6 +124,9 @@ export const buildInitialInvoice = () => {
     invoiceDate: new Date().toISOString().split('T')[0],
     buyersOrderNo: '',
     otherRef: '',
+    adBankAccountNo: '64300026000009', // Default AD Code
+    iecBankCode: 'BOFA0MM6205',        // Default IEC Branch Code
+    iecCode: '0305019503',
     buyerIfOther: '',
     ...CONSIGNORS[0].data,
     ...CONSIGNEES[0].data,

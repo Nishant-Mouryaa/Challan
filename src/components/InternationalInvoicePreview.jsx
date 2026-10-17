@@ -40,6 +40,40 @@ const InternationalInvoicePreview = ({ invoiceData, onClose }) => {
     (i) => i.returnOrder || i.actualWeight || i.volWeight
   );
 
+    // group items by box, keep first-seen order, number continuously
+  const groups = [];
+  items.forEach((item) => {
+    const key = item.boxNo ?? '';
+    let g = groups.find((x) => x.key === key);
+    if (!g) {
+      g = { key, items: [] };
+      groups.push(g);
+    }
+    g.items.push(item);
+  });
+  let sr = 0;
+  groups.forEach((g) => {
+    g.rows = g.items.map((item) => ({ ...item, sr: ++sr }));
+  });
+  const multiBox = groups.length > 1;
+
+  const renderNotes = (list) =>
+    list
+      .filter((i) => i.returnOrder || i.actualWeight || i.volWeight)
+      .map((item, i) => (
+        <div key={i} className={s.noteBlock}>
+          {item.returnOrder && (
+            <div className={s.noteMain}>RETURN ORDER #{item.returnOrder}</div>
+          )}
+          {item.actualWeight && (
+            <div className={s.noteLine}>Actual Weight : {item.actualWeight}</div>
+          )}
+          {item.volWeight && (
+            <div className={s.noteLine}>Vol Weight : {item.volWeight}</div>
+          )}
+        </div>
+      ));
+
   const handlePrint = () => window.print();
 
   const handleDownloadPDF = async () => {
@@ -166,58 +200,77 @@ DATE:{formatDate(invoiceData.invoiceDate)}                  </div>
               </div>
             </div>
 
-            {/* ---------- ITEMS ---------- */}
-            <div className={s.items}>
-              <div className={`${s.gridRow} ${s.head}`}>
-                <div className={`${s.hCell} ${s.hHsn}`}>HSN CODE</div>
-<div className={`${s.hCell} ${s.hDesc} ${s.c2}`}>DESCRIPTION OF GOODS</div>
-                <div className={`${s.hCell} ${s.c3} ${s.hTop}`}>QUANTITY</div>
-                <div className={`${s.hCell} ${s.c4} ${s.hTop}`}>
-                  <div>RATE / PIECE</div>
-                  <div className={s.hCur}>{currency}</div>
-                </div>
-                <div className={`${s.hCell} ${s.c5} ${s.hTop}`}>
-                  <div className={s.hCenter}>AMOUNT</div>
-                  <div className={s.hCur}>{currency}</div>
-                </div>
-              </div>
+{/* ---------- ITEMS ---------- */}
+<div className={s.items}>
+  <div className={`${s.gridRow} ${s.head}`}>
+    <div className={`${s.hCell} ${s.hSr}`}>SR.<br />NO</div>
+    <div className={`${s.hCell} ${s.hHsn} ${s.cHsn}`}>HSN CODE</div>
+    <div className={`${s.hCell} ${s.hDesc} ${s.c2}`}>DESCRIPTION OF GOODS</div>
+    <div className={`${s.hCell} ${s.c3} ${s.hTop}`}>QUANTITY</div>
+    <div className={`${s.hCell} ${s.c4} ${s.hTop}`}>
+      <div>RATE / PIECE</div>
+      <div className={s.hCur}>{currency}</div>
+    </div>
+    <div className={`${s.hCell} ${s.c5} ${s.hTop}`}>
+      <div className={s.hCenter}>AMOUNT</div>
+      <div className={s.hCur}>{currency}</div>
+    </div>
+  </div>
 
-              <div className={s.itemsBody}>
-                {items.map((item, i) => (
-                  <div key={i} className={`${s.gridRow} ${s.itemRow}`}>
-                    <div className={`${s.cell} ${s.cCenter}`}>{item.hsnCode}</div>
-<div className={`${s.cell} ${s.c2}`}>{item.description}</div>
-                    <div className={`${s.cell} ${s.c3} ${s.cCenter}`}>{item.quantity}</div>
-                    <div className={`${s.cell} ${s.c4} ${s.cRight}`}>{fmt(item.ratePerPiece)}</div>
-                    <div className={`${s.cell} ${s.c5} ${s.cRight}`}>{fmt(item.amount)}</div>
-                  </div>
-                ))}
-
-                {/* filler row keeps the column lines running down; notes sit at the bottom */}
-                <div className={`${s.gridRow} ${s.fillerRow}`}>
-                  <div className={s.cell} />
-<div className={`${s.cell} ${s.c2} ${s.notesCell}`}>
-                        {itemsWithNotes.map((item, i) => (
-                      <div key={i} className={s.noteBlock}>
-                        {item.returnOrder && (
-                          <div className={s.noteMain}>RETURN ORDER #{item.returnOrder}</div>
-                        )}
-                        {item.actualWeight && (
-                          <div className={s.noteLine}>Actual Weight : {item.actualWeight}</div>
-                        )}
-                        {item.volWeight && (
-                          <div className={s.noteLine}>Vol Weight : {item.volWeight}</div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <div className={`${s.cell} ${s.c3}`} />
-                  <div className={`${s.cell} ${s.c4}`} />
-                  <div className={`${s.cell} ${s.c5}`} />
-                </div>
-              </div>
+  <div className={s.itemsBody}>
+    {groups.map((g, gi) => (
+      <React.Fragment key={gi}>
+        {multiBox && (
+          <div className={`${s.gridRow} ${s.boxRow}`}>
+            <div className={s.cell} />
+            <div className={`${s.cell} ${s.cHsn}`} />
+            <div className={`${s.cell} ${s.c2} ${s.boxTitle}`}>
+              {g.key ? `BOX ${g.key}` : 'OTHER ITEMS'}
             </div>
+            <div className={`${s.cell} ${s.c3}`} />
+            <div className={`${s.cell} ${s.c4}`} />
+            <div className={`${s.cell} ${s.c5}`} />
+          </div>
+        )}
 
+        {g.rows.map((item, i) => (
+          <div key={i} className={`${s.gridRow} ${s.itemRow}`}>
+            <div className={`${s.cell} ${s.cCenter}`}>{item.sr}</div>
+            <div className={`${s.cell} ${s.cHsn} ${s.cCenter}`}>{item.hsnCode}</div>
+            <div className={`${s.cell} ${s.c2}`}>{item.description}</div>
+            <div className={`${s.cell} ${s.c3} ${s.cCenter}`}>{item.quantity}</div>
+            <div className={`${s.cell} ${s.c4} ${s.cRight}`}>{fmt(item.ratePerPiece)}</div>
+            <div className={`${s.cell} ${s.c5} ${s.cRight}`}>{fmt(item.amount)}</div>
+          </div>
+        ))}
+
+        {/* multi-box: notes sit right under their own box */}
+        {multiBox && g.rows.some((i) => i.returnOrder || i.actualWeight || i.volWeight) && (
+          <div className={`${s.gridRow} ${s.boxNotesRow}`}>
+            <div className={s.cell} />
+            <div className={`${s.cell} ${s.cHsn}`} />
+            <div className={`${s.cell} ${s.c2}`}>{renderNotes(g.rows)}</div>
+            <div className={`${s.cell} ${s.c3}`} />
+            <div className={`${s.cell} ${s.c4}`} />
+            <div className={`${s.cell} ${s.c5}`} />
+          </div>
+        )}
+      </React.Fragment>
+    ))}
+
+    {/* filler row keeps column lines running down */}
+    <div className={`${s.gridRow} ${s.fillerRow}`}>
+      <div className={s.cell} />
+      <div className={`${s.cell} ${s.cHsn}`} />
+      <div className={`${s.cell} ${s.c2} ${s.notesCell}`}>
+        {!multiBox && renderNotes(items)}
+      </div>
+      <div className={`${s.cell} ${s.c3}`} />
+      <div className={`${s.cell} ${s.c4}`} />
+      <div className={`${s.cell} ${s.c5}`} />
+    </div>
+  </div>
+</div>
             {/* ---------- TOTAL ---------- */}
             <div className={s.foot}>
               <div className={s.footLeft}>

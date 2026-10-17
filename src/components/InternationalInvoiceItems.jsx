@@ -17,15 +17,16 @@ const InternationalInvoiceItems = ({ items, onItemChange, onAddItem, onRemoveIte
         <table className={styles.itemsTable}>
           <thead>
             <tr>
-              <th style={{ width: '8%' }}>S.No</th>
-              <th style={{ width: '10%' }}>HSN Code</th>
-              <th style={{ width: '25%' }}>Description of Goods</th>
-              <th style={{ width: '8%' }}>Qty</th>
-              <th style={{ width: '12%' }}>Rate/Piece</th>
-              <th style={{ width: '12%' }}>Amount</th>
-              <th style={{ width: '15%' }}>Weight Info</th>
-              <th style={{ width: '10%' }}>Action</th>
-            </tr>
+  <th style={{ width: '6%' }}>S.No</th>
+  <th style={{ width: '7%' }}>Box</th>
+  <th style={{ width: '9%' }}>HSN Code</th>
+  <th style={{ width: '25%' }}>Description of Goods</th>
+  <th style={{ width: '8%' }}>Qty</th>
+  <th style={{ width: '11%' }}>Rate/Piece</th>
+  <th style={{ width: '11%' }}>Amount</th>
+  <th style={{ width: '15%' }}>Weight Info</th>
+  <th style={{ width: '8%' }}>Action</th>
+</tr>
           </thead>
           <tbody>
             {items.map((item, index) => (
@@ -66,7 +67,7 @@ const InternationalInvoiceItems = ({ items, onItemChange, onAddItem, onRemoveIte
                     className={styles.itemInput}
                     style={{ minHeight: '40px', resize: 'vertical' }}
                   />
-                </td>
+                </td> 
                 <td>
                   <input
                     type="number"

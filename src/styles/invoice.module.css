@@ -105,8 +105,21 @@
 }
 .gridRow {
   display: grid;
-  grid-template-columns: 20.5% 38.4% 14.7% 14.7% 11.7%;
+  grid-template-columns: 6% 14.5% 38.4% 14.7% 14.7% 11.7%;
 }
+.cHsn { border-left: 1.5px solid #000; }
+.hSr {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 8.5pt;
+  line-height: 4mm;
+}
+
+.boxTitle { font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+.boxRow .cell { padding-bottom: 0; padding-top: 1mm; }
+.boxNotesRow .cell { padding-bottom: 1mm; }
 .c3, .c4, .c5 { border-left: 1.5px solid #000; }
 
 .head {
@@ -134,7 +147,7 @@
 }
 .cCenter { text-align: center; }
 .cRight { text-align: right; padding-right: 1.5mm; }
-.itemRow:first-child .cell { padding-top: 13mm; }
+.itemsBody > .gridRow:first-child .cell { padding-top: 13mm; }
 .itemRow .cell { padding-bottom: 2mm; }
 
 .fillerRow { flex: 1; min-height: 0; }

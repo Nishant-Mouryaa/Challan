@@ -303,6 +303,90 @@ const NonScometSheet = ({ d }) => {
   );
 };
 
+/* =============== SHIPPER SELF DECLARATION (NEW) =============== */
+const SelfDeclarationSheet = ({ d }) => (
+  <div className={x.sdWrap}>
+    <div className={x.sdTitle}>SHIPPER SELF -- DECLARATION FORM</div>
+    
+    <div className={x.sdTop}>
+      <div>Date: {d.date}</div>
+      <div>To: DHL EXPRESS LTD</div>
+      <div>Name of Sales Partner: DHL</div>
+      <div>Address: MUMBAI</div>
+    </div>
+
+    <div className={x.sdBody}>
+      <p>
+        As a Shipper of shipment bearing DHL Awb# <strong>{d.awbNo}</strong>, I hereby declare that the Medicines being shipped to <strong>{d.recipientName}</strong> to <strong>{d.recipientCountry}</strong> are permissible for carriage to the destination country as per the prevailing statutory regulations and are also not mentioned in the Narcotic Drugs and Psychotropic Substances Act list by generic name or any trade name and it can be legally exported out of India.
+      </p>
+      <p>
+        I / We declare that we have given accurate and up-to-date contact information in the waybill and shipment documents, including name, address, telephone/mobile number and email address. KYC documents are true and verifiable with original KYC documents. I / We are fully aware that if Shipment related information are found to be incorrect or misleading, I/We will take complete responsibility and will cooperate in any incident of reported violation and legal proceedings as per law.
+      </p>
+      <p>
+        I/We further agree and give consent for the disclosure of all information and documents related to my KYC, when required for verification.
+      </p>
+    </div>
+
+    <div className={x.sdBottom}>
+      <div className={x.sdBox}>
+        <div className={x.sdBoxTitle}>Company / Shipper Name & Address :-</div>
+        <div>{d.shipperName}</div>
+        <div className={x.pre}>{d.shipperAddress}</div>
+        <div>MOB: {d.shipperMobile}</div>
+        {d.aadharNo && <div>ADHAR CARD NO: {d.aadharNo}</div>}
+        <div className={x.sdSign}> (Company stamp / Shipper sign)</div>
+      </div>
+      <div className={x.sdBox}>
+        <div className={x.sdBoxTitle}>Recipient Name and address :-</div>
+        <div>{d.recipientName}</div>
+        <div className={x.pre}>{d.recipientAddress}</div>
+        <div>{d.recipientCity}</div>
+        <div>{d.recipientCountry}</div>
+        <div>MOB: {d.recipientMobile}</div>
+      </div>
+    </div>
+  </div>
+);
+
+/* =============== INDEMNITY LETTER (NEW) =============== */
+const IndemnitySheet = ({ d }) => (
+  <div className={x.indWrap}>
+    <div className={x.indDate}>DATE: {d.date}</div>
+    
+    <div className={x.indTitle}>
+      {d.companyName} <br /><br />
+      INDEMINITY LETTER / DECLARATION FOR FRAGILE SHIPMENTS
+    </div>
+
+    <div className={x.indTo}>
+      <div>TO</div>
+      <div>DHL EXPRESS LTD</div>
+      <div>MUMBAI</div>
+    </div>
+
+    <div className={x.indBody}>
+      <p>
+        WE HEREBY UNDERTAKE TO SEND OUR CONISGNMENT THROUGH DHL EXPRESS LTD BEING FULLY AWARE THAT IT IS FRAGILE ({d.contents}) & DESPITE THE BEST EFFORTS OF DHL, IT MAY BE DAMAGED IN TRANSIT.
+      </p>
+      <p>
+        THIS HAS BEEN CLEARLY EXPLAINED TO US BY DHL EXPRESS AND WE ARE ACCEPTING THIS FACTS &CONSEQUENTLY UNDERTAKE TO INDEMINITY DHL EXPRESS LTD, IN FULL AGAINST ANY CLAIMS FOR DAMAGE TO THIS FRAGILE SHIPMENT BEING SHIPPED BY US.
+      </p>
+      <div className={x.indRef}>
+        <div>AWB NO: {d.awbNo}</div>
+        <div>CONTENT: {d.contents}</div>
+      </div>
+    </div>
+
+    <div className={x.indSign}>
+      <div>THANKING YOU</div>
+      <div style={{ marginTop: '20px' }}>For {d.companyName}</div>
+      <div className={x.indSignSpace}></div>
+      <div style={{ fontWeight: 'bold' }}>{d.companyName}</div>
+    </div>
+  </div>
+);
+
+
 /* =============== FIELD LISTS (edit panel) =============== */
 const F = (k, label, o = {}) => ({ k, label, ...o });
 
@@ -371,6 +455,21 @@ const scometFields = [
   F('company', 'Company name'),
 ];
 
+const selfDeclFields = [
+  F('date', 'Date'), F('awbNo', 'AWB No'),
+  F('recipientName', 'Recipient Name'), F('recipientCountry', 'Destination Country'),
+  F('shipperName', 'Shipper Name', { wide: true }), F('shipperAddress', 'Shipper Address', { rows: 3, wide: true }),
+  F('shipperMobile', 'Shipper Mobile'), F('aadharNo', 'Aadhaar No'),
+  F('recipientAddress', 'Recipient Address', { rows: 3, wide: true }),
+  F('recipientCity', 'Recipient City'), F('recipientMobile', 'Recipient Mobile'),
+];
+
+const indemnityFields = [
+  F('date', 'Date'), F('companyName', 'Company Name', { wide: true }),
+  F('awbNo', 'AWB No'), F('contents', 'Contents', { rows: 3, wide: true }),
+];
+
+
 /* =============== REGISTRY =============== */
 export const EXTRA_DOCS = [
   { id: 'packing', label: 'Packing List', file: 'Packing-List', build: buildPackingListDefaults,
@@ -381,4 +480,39 @@ export const EXTRA_DOCS = [
     fields: annexureFields, Sheet: AnnexureSheet, side: 20, margins: { top: 20, bottom: 15 }, letterhead: true },
   { id: 'scomet', label: 'Non-SCOMET Declaration', file: 'Non-SCOMET-Declaration', build: buildNonScometDefaults,
     fields: scometFields, Sheet: NonScometSheet, side: 25, margins: { top: 20, bottom: 15 }, letterhead: true },
+    
+  // --- NEW DOCUMENTS ---
+  { id: 'self_decl', label: 'Shipper Self Declaration', file: 'Shipper-Self-Declaration', 
+    build: (data) => {
+      const consignor = data.consignorDetails || {};
+      const consignee = data.consigneeDetails || {};
+      return {
+        date: data.invoiceDate ? new Date(data.invoiceDate).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
+        awbNo: data.awbNo || '',
+        recipientName: consignee.name || '',
+        recipientCountry: consignee.country || '',
+        shipperName: consignor.company || '',
+        shipperAddress: `${consignor.address || ''} ${consignor.building || ''} ${consignor.area || ''}, ${consignor.city || ''} - ${consignor.pin || ''}`,
+        shipperMobile: consignor.phone || '',
+        aadharNo: consignor.idType === 'aadhaar' ? consignor.aadhaar : '',
+        recipientAddress: consignee.address || '',
+        recipientCity: consignee.city || '',
+        recipientMobile: consignee.phone || '',
+      
+      };
+    },
+    fields: selfDeclFields, Sheet: SelfDeclarationSheet, side: 15, margins: { top: 20, bottom: 20 }, letterhead: true },
+
+  { id: 'indemnity', label: 'Indemnity Letter', file: 'Indemnity-Fragile',
+    build: (data) => {
+      const consignor = data.consignorDetails || {};
+      const goods = (data.items || []).map((i, idx) => `${idx + 1}) ${i.description}`).join(' ');
+      return {
+        date: data.invoiceDate ? new Date(data.invoiceDate).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
+        companyName: consignor.company || '',
+        awbNo: data.awbNo || '',
+        contents: goods || 'FRAGILE GOODS',
+      };
+    },
+    fields: indemnityFields, Sheet: IndemnitySheet, side: 20, margins: { top: 20, bottom: 20 }, letterhead: true },
 ];
