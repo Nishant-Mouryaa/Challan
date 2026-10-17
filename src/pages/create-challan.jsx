@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import MainLayout from '../components/Layout/MainLayout';
 import ChallanForm from '../components/ChallanForm';
 
 export default function CreateChallan() {
@@ -7,7 +8,9 @@ export default function CreateChallan() {
       <Head>
         <title>Create Delivery Challan - DC System</title>
       </Head>
-      <ChallanForm />
+      <MainLayout>
+        <ChallanForm />
+      </MainLayout>
     </>
   );
 }

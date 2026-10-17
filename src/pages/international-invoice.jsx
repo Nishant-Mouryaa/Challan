@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import MainLayout from '../components/Layout/MainLayout';
 import InternationalInvoiceForm from '../components/InternationalInvoiceForm';
 
 export default function InternationalInvoice() {
@@ -7,7 +8,9 @@ export default function InternationalInvoice() {
       <Head>
         <title>International Invoice - Invoice System</title>
       </Head>
-      <InternationalInvoiceForm />
+      <MainLayout>
+        <InternationalInvoiceForm />
+      </MainLayout>
     </>
   );
 }
