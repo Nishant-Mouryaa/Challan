@@ -19,6 +19,7 @@
 
 # production
 /build
+/data/legacy-documents/
 
 # misc
 .DS_Store

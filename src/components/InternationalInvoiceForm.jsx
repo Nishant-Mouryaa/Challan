@@ -43,7 +43,7 @@ const [showDocs, setShowDocs] = useState(false);
       }, 3000);
     } catch (error) {
       console.error('Error saving invoice:', error);
-      setSuccessMessage('Error saving invoice. Please try again.');
+      setSuccessMessage(error.message || 'Error saving invoice. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -534,6 +534,7 @@ onChange={(e) =>
     invoiceData={invoiceData}
     recommendedDocs={mode.docs}
     onClose={() => setShowDocs(false)}
+    onSave={(supportingDocuments) => updateInvoiceData({ supportingDocuments })}
   />
 )}
     </div>

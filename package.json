@@ -6,9 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "export": "next export"
+    "export": "next export",
+    "migrate:documents": "node scripts/migrate-json-documents.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.57.0",
     "@types/react": "^19.3.0",
     "axios": "^1.6.0",
     "date-fns": "^2.30.0",

@@ -52,17 +52,21 @@ export const useChallan = (initialData = null) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/challans', {
-        method: 'POST',
+      const response = await fetch(
+        initialData?.id ? `/api/challans/${initialData.id}` : '/api/challans',
+        {
+        method: initialData?.id ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(challanData),
-      });
+        }
+      );
 
-      if (!response.ok) throw new Error('Failed to save challan');
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to save challan');
 
-      const savedData = await response.json();
+      const savedData = result;
       setSavedChallans((prev) => [savedData, ...prev]);
       return savedData;
     } catch (err) {
@@ -71,7 +75,7 @@ export const useChallan = (initialData = null) => {
     } finally {
       setLoading(false);
     }
-  }, [challanData]);
+  }, [challanData, initialData]);
 
   const updateChallanData = useCallback((updates) => {
     setChallanData((prev) => ({

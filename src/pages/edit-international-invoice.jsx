@@ -4,6 +4,7 @@ import Head from 'next/head';
 import styles from '../styles/form.module.css';
 import InternationalInvoiceItems from '../components/InternationalInvoiceItems';
 import InternationalInvoicePreview from '../components/InternationalInvoicePreview';
+import ExportDocumentsModal from '../components/ExportDocumentsModal';
 import { useInternationalInvoice } from '../hooks/useInternationalInvoice';
 
 export default function EditInternationalInvoice() {
@@ -20,14 +21,14 @@ export default function EditInternationalInvoice() {
     addItem,
     removeItem,
     updateItem,
-    saveInvoice,
-    resetForm,
     getTotalAmount,
     getAmountInWords,
   } = useInternationalInvoice();
 
   const [showPreview, setShowPreview] = useState(false);
+  const [showDocs, setShowDocs] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [loadError, setLoadError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   // Fetch invoice on mount
@@ -39,9 +40,9 @@ export default function EditInternationalInvoice() {
 
   const fetchInvoice = async () => {
     try {
-      const response = await fetch('/api/international-invoices');
-      const invoices = await response.json();
-      const invoice = invoices.find((inv) => inv.id === parseInt(id));
+      const response = await fetch(`/api/international-invoices/${id}`);
+      const invoice = await response.json();
+      if (!response.ok) throw new Error(invoice.error || 'Failed to load invoice');
       
       if (invoice) {
         setInvoiceToEdit(invoice);
@@ -53,6 +54,7 @@ export default function EditInternationalInvoice() {
       }
     } catch (error) {
       console.error('Error fetching invoice:', error);
+      setLoadError(error.message || 'Failed to load invoice');
       setLoading(false);
     }
   };
@@ -61,11 +63,13 @@ export default function EditInternationalInvoice() {
     setIsSaving(true);
     try {
       // Update the invoice
-      await fetch(`/api/international-invoices/${id}`, {
+      const response = await fetch(`/api/international-invoices/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(invoiceData),
       });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to update invoice');
 
       setSuccessMessage('Invoice updated successfully!');
       setTimeout(() => {
@@ -74,7 +78,7 @@ export default function EditInternationalInvoice() {
       }, 2000);
     } catch (error) {
       console.error('Error saving invoice:', error);
-      setSuccessMessage('Error updating invoice. Please try again.');
+      setSuccessMessage(error.message || 'Error updating invoice. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -91,7 +95,7 @@ export default function EditInternationalInvoice() {
   if (!invoiceToEdit) {
     return (
       <div className={styles.formContainer}>
-        <div className={styles.error}>Invoice not found</div>
+        <div className={styles.error}>{loadError || 'Invoice not found'}</div>
       </div>
     );
   }
@@ -415,6 +419,14 @@ export default function EditInternationalInvoice() {
           </button>
           <button
             type="button"
+            onClick={() => setShowDocs(true)}
+            className="btn btn-primary"
+            disabled={isSaving}
+          >
+            Supporting Documents
+          </button>
+          <button
+            type="button"
             onClick={handleSave}
             className="btn btn-success"
             disabled={isSaving}
@@ -436,6 +448,15 @@ export default function EditInternationalInvoice() {
           <InternationalInvoicePreview
             invoiceData={invoiceData}
             onClose={() => setShowPreview(false)}
+          />
+        )}
+        {showDocs && (
+          <ExportDocumentsModal
+            invoiceData={invoiceData}
+            onClose={() => setShowDocs(false)}
+            onSave={(supportingDocuments) =>
+              updateInvoiceData({ supportingDocuments })
+            }
           />
         )}
       </div>

@@ -54,9 +54,10 @@ export const useInternationalInvoice = (initialData = null) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(invoiceData),
       });
-      if (!response.ok) throw new Error('Failed to save invoice');
-
       const savedData = await response.json();
+      if (!response.ok) {
+        throw new Error(savedData.error || 'Failed to save invoice');
+      }
       setSavedInvoices((prev) => [savedData, ...prev]);
       return savedData;
     } catch (err) {

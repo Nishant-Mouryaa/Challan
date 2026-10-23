@@ -8,6 +8,7 @@ import { formatDate } from '../utils/formatters';
 export default function ViewInternationalInvoices() {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [editingInvoice, setEditingInvoice] = useState(null);
@@ -18,13 +19,15 @@ export default function ViewInternationalInvoices() {
 
   const fetchInvoices = async () => {
     try {
+      setLoadError('');
       const response = await fetch('/api/international-invoices');
       const data = await response.json();
-      console.log('Fetched invoices:', data);
+      if (!response.ok) throw new Error(data.error || 'Failed to load invoices');
       setInvoices(data || []);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching invoices:', error);
+      setLoadError(error.message || 'Failed to load invoices');
       setLoading(false);
     }
   };
@@ -39,10 +42,14 @@ export default function ViewInternationalInvoices() {
   const handleDelete = async (id) => {
     if (confirm('Are you sure you want to delete this invoice?')) {
       try {
-        await fetch(`/api/international-invoices/${id}`, { method: 'DELETE' });
+        const response = await fetch(`/api/international-invoices/${id}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) throw new Error('Failed to delete invoice');
         fetchInvoices();
       } catch (error) {
         console.error('Error deleting invoice:', error);
+        setLoadError(error.message || 'Failed to delete invoice');
       }
     }
   };
@@ -72,6 +79,8 @@ export default function ViewInternationalInvoices() {
           <h1>📋 International Invoices</h1>
           <p>View, edit, and manage all created invoices</p>
         </div>
+
+        {loadError && <div className={styles.error}>{loadError}</div>}
 
         {/* Create New Button */}
         <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>

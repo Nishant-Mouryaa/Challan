@@ -6,7 +6,7 @@ import ItemsTable from './ItemsTable';
 import ChallanPreview from './ChallanPreview';
 import { useChallan } from '../hooks/useChallan';
 
-const ChallanForm = () => {
+const ChallanForm = ({ initialData = null }) => {
   const {
     challanData,
     updateChallanData,
@@ -19,7 +19,7 @@ const ChallanForm = () => {
     resetForm,
     getAmountInWords,
     getTotalAmount,
-  } = useChallan();
+  } = useChallan(initialData);
 
   const [showPreview, setShowPreview] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -72,14 +72,18 @@ const ChallanForm = () => {
     setLoading(true);
     try {
       await saveChallan();
-      setSuccessMessage('Challan saved successfully!');
-      setTimeout(() => {
-        setSuccessMessage('');
-        resetForm();
-      }, 3000);
+      setSuccessMessage(
+        initialData ? 'Challan updated successfully!' : 'Challan saved successfully!'
+      );
+      if (!initialData) {
+        setTimeout(() => {
+          setSuccessMessage('');
+          resetForm();
+        }, 3000);
+      }
     } catch (error) {
       console.error('Error saving challan:', error);
-      setSuccessMessage('Error saving challan. Please try again.');
+      setSuccessMessage(error.message || 'Error saving challan. Please try again.');
     } finally {
       setLoading(false);
     }

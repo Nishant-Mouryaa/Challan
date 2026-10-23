@@ -65,15 +65,24 @@ const Field = ({ label, value, onChange, rows, wide, options, check }) => (
   </label>
 );
 
-const ExportDocumentsModal = ({ invoiceData, onClose }) => {
+const ExportDocumentsModal = ({ invoiceData, onClose, onSave }) => {
   const certRef = useRef();
   const letterRef = useRef();
+  const savedDocuments = invoiceData.supportingDocuments || {};
   const [tab, setTab] = useState('cert');
   const [showEdit, setShowEdit] = useState(false);
-  const [letterhead, setLetterhead] = useState(false);
+  const [letterhead, setLetterhead] = useState(
+    () => savedDocuments.letterhead || false
+  );
   const [busy, setBusy] = useState(false);
-  const [cert, setCert] = useState(() => buildCertificateDefaults(invoiceData));
-  const [letter, setLetter] = useState(() => buildAuthorisationDefaults(invoiceData));
+  const [cert, setCert] = useState(
+    () => savedDocuments.certificate || buildCertificateDefaults(invoiceData)
+  );
+  const [letter, setLetter] = useState(
+    () =>
+      savedDocuments.authorizationLetter ||
+      buildAuthorisationDefaults(invoiceData)
+  );
 
   if (typeof document === 'undefined') return null;
 
@@ -85,7 +94,12 @@ const ExportDocumentsModal = ({ invoiceData, onClose }) => {
 
 const extraRefs = useRef({});
 const [extra, setExtra] = useState(() =>
-  Object.fromEntries(EXTRA_DOCS.map((doc) => [doc.id, doc.build(invoiceData)]))
+  Object.fromEntries(
+    EXTRA_DOCS.map((doc) => [
+      doc.id,
+      savedDocuments.extraDocuments?.[doc.id] || doc.build(invoiceData),
+    ])
+  )
 );
 const setX = (id, k) => (v) => setExtra((p) => ({ ...p, [id]: { ...p[id], [k]: v } }));
 
@@ -366,6 +380,22 @@ const download = async (which) => {
           <button onClick={regenerate} className={m.closeModalBtn}>
             ↺ Reset to invoice data
           </button>
+          <button
+            onClick={() =>
+              onSave({
+                certificate: cert,
+                authorizationLetter: letter,
+                extraDocuments: extra,
+                letterhead,
+              })
+            }
+            className={m.closeModalBtn}
+          >
+            Apply document edits
+          </button>
+          <span className={d.noPrint}>
+            Apply edits here, then save or update the invoice to keep them.
+          </span>
           <button onClick={onClose} className={m.closeModalBtn}>Close</button>
         </div>
       </div>
