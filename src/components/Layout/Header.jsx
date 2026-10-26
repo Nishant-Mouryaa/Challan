@@ -13,6 +13,7 @@ const pageTitles = {
   '/view-international-invoices': 'All international invoices',
   '/edit-international-invoice': 'Edit international invoice',
   '/settings': 'Business setup',
+  '/billing': 'Plans and billing',
 };
 
 const Header = ({ isOpen, setIsOpen }) => {

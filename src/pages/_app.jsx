@@ -8,6 +8,7 @@ function AuthGate({ children }) {
   const router = useRouter();
   const { session, workspace, isLoading, error, configurationError, signOut } = useAuth();
   const isPublicPage = ['/login', '/signup'].includes(router.pathname);
+  const isBillingPage = router.pathname === '/billing';
   const [signOutError, setSignOutError] = useState('');
 
   useEffect(() => {
@@ -17,8 +18,15 @@ function AuthGate({ children }) {
     } else if (!isPublicPage && !session) {
       const next = encodeURIComponent(router.asPath);
       router.replace(`/login?next=${next}`);
+    } else if (
+      !isPublicPage &&
+      !isBillingPage &&
+      workspace?.subscription &&
+      !hasEntitlement(workspace.subscription)
+    ) {
+      router.replace('/billing');
     }
-  }, [isLoading, isPublicPage, router, session, workspace]);
+  }, [isBillingPage, isLoading, isPublicPage, router, session, workspace]);
 
   const handleSignOut = async () => {
     try {
@@ -41,8 +49,28 @@ function AuthGate({ children }) {
       </main>
     );
   }
+  if (!isBillingPage && !hasEntitlement(workspace.subscription)) {
+    return (
+      <main style={{ maxWidth: 560, margin: '4rem auto', padding: '1.5rem' }}>
+        <h1>Choose a subscription plan</h1>
+        <p>Your free trial has ended. Select a plan to continue using your workspace.</p>
+        <button type="button" onClick={() => router.replace('/billing')}>
+          View plans
+        </button>
+      </main>
+    );
+  }
 
   return children;
+}
+
+function hasEntitlement(subscription) {
+  if (!subscription) return false;
+  if (subscription.status === 'active') return true;
+  return (
+    subscription.status === 'trialing' &&
+    new Date(subscription.trialEndsAt).getTime() > Date.now()
+  );
 }
 
 function MyApp({ Component, pageProps }) {

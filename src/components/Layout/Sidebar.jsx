@@ -31,7 +31,10 @@ const navGroups = [
   },
   {
     label: 'Workspace',
-    items: [{ label: 'Business setup', icon: 'settings', href: '/settings' }],
+    items: [
+      { label: 'Business setup', icon: 'settings', href: '/settings' },
+      { label: 'Plans and billing', icon: 'receipt', href: '/billing' },
+    ],
   },
 ];
 

@@ -53,6 +53,18 @@ function toRow(kind, data, workspaceId) {
 
 function reportError(res, action, error) {
   console.error(`Error ${action}:`, error);
+  if (error.code === 'P0001' && error.message === 'DOCUMENT_LIMIT_REACHED') {
+    return res.status(402).json({
+      error: 'Your monthly document limit has been reached. Upgrade your plan to continue.',
+      code: 'DOCUMENT_LIMIT_REACHED',
+    });
+  }
+  if (error.code === 'P0001' && error.message === 'SUBSCRIPTION_REQUIRED') {
+    return res.status(402).json({
+      error: 'Your trial has ended. Choose a plan to create more documents.',
+      code: 'SUBSCRIPTION_REQUIRED',
+    });
+  }
   const status = error.statusCode || 500;
   return res.status(status).json({
     error:
@@ -97,14 +109,18 @@ export async function handleDocumentCollection(req, res, kind) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const { data, error } = await supabase
-      .from(TABLE)
-      .insert(toRow(kind, body, access.workspace.id))
-      .select(recordColumns)
-      .single();
+    const row = toRow(kind, body, access.workspace.id);
+    const { data, error } = await supabase.rpc('create_workspace_document', {
+      target_workspace_id: row.workspace_id,
+      target_kind: row.kind,
+      target_document_number: row.document_number,
+      target_document_date: row.document_date,
+      target_party_name: row.party_name,
+      target_payload: row.payload,
+    });
 
     if (error) throw error;
-    return res.status(201).json(toDocument(data));
+    return res.status(201).json(toDocument(Array.isArray(data) ? data[0] : data));
   } catch (error) {
     return reportError(res, `handling ${config.label.toLowerCase()} collection`, error);
   }

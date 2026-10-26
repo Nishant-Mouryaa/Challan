@@ -59,6 +59,20 @@ Saved challans, international invoices, and business setup records are stored in
 4. Run [`supabase/migrations/20261026190000_add_workspaces_and_auth.sql`](./supabase/migrations/20261026190000_add_workspaces_and_auth.sql). It creates workspace membership, tenant-owned records, row-level security policies, and the signup trigger. Existing database documents are assigned to the legacy workspace; the existing clients, senders, and products are seeded into that workspace.
 5. If legacy challan/invoice JSON files still need to be imported, run `npm run migrate:documents` after the tenant migration. The script imports or updates archived legacy documents in the initial workspace.
 6. The migration reserves the legacy workspace for the configured initial owner email. That owner must sign up with the same email to claim its data; other signups create separate empty workspaces. New users can add their own clients, senders, and products under **Business setup**.
-7. Deploy only after both database migrations and the required environment variables are configured. The app's API routes require authentication.
+7. Deploy only after the required database migrations and environment variables are configured. The app's API routes require authentication.
 
 International invoice business details and supporting-document defaults now start blank rather than using another business's shared hard-coded data. Fill them in per invoice. Team invitations and multi-user workspace membership are not included yet; each workspace currently has one owner account.
+
+## Razorpay subscriptions (test mode)
+
+The billing page offers Starter at ₹499/month (100 documents per month) and Business at ₹1,499/month (500 documents per month). Challans and international invoices share the same monthly document allowance. New workspaces receive a 7-day trial; a subscription selected during the trial is scheduled to start after the trial ends. Enterprise pricing is handled separately.
+
+1. Create **monthly** plans in the Razorpay Dashboard's **test mode**:
+   - Starter: ₹499 per billing period (49,900 paise)
+   - Business: ₹1,499 per billing period (149,900 paise)
+2. Add the Razorpay values from `.env.example` to your server environment. Use test credentials only; `RAZORPAY_KEY_ID` must start with `rzp_test_`. The key secret and webhook secret must remain server-side. The plan IDs are the IDs for your monthly test-mode plans.
+3. Configure a Razorpay webhook pointing to `https://<your-app-url>/api/webhooks/razorpay`, using the same signing secret as `RAZORPAY_WEBHOOK_SECRET`. Subscribe it to `subscription.authenticated`, `subscription.activated`, `subscription.charged`, `subscription.pending`, `subscription.halted`, `subscription.paused`, `subscription.resumed`, `subscription.cancelled`, `subscription.completed`, and `subscription.updated`.
+4. Apply [`supabase/migrations/20261026200000_add_razorpay_subscriptions.sql`](./supabase/migrations/20261026200000_add_razorpay_subscriptions.sql) after the workspace migration. It initializes workspace trials, tracks billing webhooks, and enforces document limits in the database.
+5. Set `NEXT_PUBLIC_SUPPORT_EMAIL` if Enterprise inquiries should go to a dedicated address. Keep all credentials out of source control.
+
+The checkout flow and webhook are configured for Razorpay test mode. Before accepting real payments, a deliberate live-mode rollout is required, including code/configuration changes, live plans and credentials, and end-to-end live testing.
