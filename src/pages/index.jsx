@@ -1,17 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import MainLayout from '../components/Layout/MainLayout';
 import FeatureCard from '../components/Layout/FeatureCard';
 import Icon from '../components/Layout/Icons';
 import layoutStyles from '../styles/layout.module.css';
-
-// TODO: replace these placeholder numbers with real counts
-// (e.g. fetch from /api/challans, /api/international-invoices, /api/clients).
-const stats = [
-  { label: 'Challans created', value: '156' },
-  { label: 'Invoices created', value: '42' },
-  { label: 'Clients', value: '28' },
-];
+import { authenticatedFetch } from '../lib/supabaseClient';
 
 const challanActions = [
   {
@@ -52,6 +45,35 @@ const invoiceActions = [
 ];
 
 export default function Home() {
+  const [stats, setStats] = useState(null);
+  const [statsError, setStatsError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+
+    Promise.all(['/api/challans', '/api/international-invoices', '/api/clients'].map(async (url) => {
+      const response = await authenticatedFetch(url);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to load dashboard totals');
+      return data.length;
+    }))
+      .then(([challans, invoices, clients]) => {
+        if (active) setStats([
+          { label: 'Challans created', value: challans },
+          { label: 'Invoices created', value: invoices },
+          { label: 'Clients', value: clients },
+        ]);
+      })
+      .catch((error) => {
+        console.error('Unable to load dashboard totals:', error);
+        if (active) setStatsError(error.message || 'Unable to load dashboard totals');
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <MainLayout>
       <div className={layoutStyles.pageHeader}>
@@ -74,13 +96,18 @@ export default function Home() {
       </div>
 
       <dl className={layoutStyles.statsStrip}>
-        {stats.map((stat) => (
+        {(stats || [
+          { label: 'Challans created', value: '—' },
+          { label: 'Invoices created', value: '—' },
+          { label: 'Clients', value: '—' },
+        ]).map((stat) => (
           <div key={stat.label} className={layoutStyles.stat}>
             <dd className={layoutStyles.statValue}>{stat.value}</dd>
             <dt className={layoutStyles.statLabel}>{stat.label}</dt>
           </div>
         ))}
       </dl>
+      {statsError && <p role="alert">{statsError}</p>}
 
       <div className={layoutStyles.panelGrid}>
         <section className={layoutStyles.panel} aria-labelledby="challans-heading">

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import styles from '../styles/form.module.css';
 import InternationalInvoiceItems from './InternationalInvoiceItems';
 import InternationalInvoicePreview from './InternationalInvoicePreview';
-import PresetSelectors from './PresetSelectors';
 import { useInternationalInvoice } from '../hooks/useInternationalInvoice';
 import ExportDocumentsModal from './ExportDocumentsModal';
 import InvoiceModeSelector from './InvoiceModeSelector';
@@ -67,8 +66,6 @@ const [showDocs, setShowDocs] = useState(false);
         details={invoiceData.modeDetails}
         onChange={updateModeDetails}
       />
-      <PresetSelectors onPick={updateInvoiceData} />
-
       {/* Invoice Details */}
       <fieldset className={styles.fieldset}>
         <legend className={styles.legend}>Invoice Details</legend>
@@ -133,19 +130,9 @@ onChange={(e) =>
         </div>
       </fieldset>
 
-      {/* Consignor Details (Fixed - Bruker) */}
+      {/* Consignor Details */}
       <fieldset className={styles.fieldset}>
-        <legend className={styles.legend}>Consignor Details (Fixed)</legend>
-        <div style={{
-          backgroundColor: '#f0f7ff',
-          padding: '1rem',
-          borderRadius: '4px',
-          marginBottom: '1rem',
-        }}>
-          <p style={{ margin: 0, color: '#004085' }}>
-            ℹ️ Consignor details are pre-filled with Bruker India Scientific details. You can edit if needed.
-          </p>
-        </div>
+        <legend className={styles.legend}>Consignor Details</legend>
 
         <div className={styles.formRow}>
           <div className={styles.formControl}>
@@ -271,7 +258,7 @@ onChange={(e) =>
       }
       placeholder={
         (invoiceData.consignorDetails.idType || 'gstin') === 'gstin'
-          ? 'e.g., 27AAACB2346K1ZR'
+          ? 'Enter GSTIN'
           : 'e.g., 1234 5678 9012'
       }
       className={styles.formControl}

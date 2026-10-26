@@ -4,6 +4,7 @@ import Link from 'next/link';
 import styles from '../styles/form.module.css';
 import challanStyles from '../styles/challan.module.css';
 import { formatDate } from '../utils/formatters';
+import { authenticatedFetch } from '../lib/supabaseClient';
 
 export default function ViewInternationalInvoices() {
   const [invoices, setInvoices] = useState([]);
@@ -20,7 +21,7 @@ export default function ViewInternationalInvoices() {
   const fetchInvoices = async () => {
     try {
       setLoadError('');
-      const response = await fetch('/api/international-invoices');
+      const response = await authenticatedFetch('/api/international-invoices');
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to load invoices');
       setInvoices(data || []);
@@ -42,7 +43,7 @@ export default function ViewInternationalInvoices() {
   const handleDelete = async (id) => {
     if (confirm('Are you sure you want to delete this invoice?')) {
       try {
-        const response = await fetch(`/api/international-invoices/${id}`, {
+        const response = await authenticatedFetch(`/api/international-invoices/${id}`, {
           method: 'DELETE',
         });
         if (!response.ok) throw new Error('Failed to delete invoice');

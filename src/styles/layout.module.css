@@ -332,6 +332,27 @@
   gap: 4px;
 }
 
+.workspaceName {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.signOutButton {
+  width: auto;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .workspaceName {
+    display: none;
+  }
+}
+
 .contentArea {
   flex: 1;
   padding: var(--spacing-lg) var(--spacing-md) var(--spacing-3xl);

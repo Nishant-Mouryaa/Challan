@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { convertAmountToWords } from '../utils/amountInWords';
+import { authenticatedFetch } from '../lib/supabaseClient';
 import { buildInitialInvoice, EMPTY_ITEM } from '../data/internationalInvoicePresets';
 import {
   MODES,
@@ -49,7 +50,7 @@ export const useInternationalInvoice = (initialData = null) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/international-invoices', {
+      const response = await authenticatedFetch('/api/international-invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(invoiceData),

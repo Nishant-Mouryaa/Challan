@@ -1,4 +1,3 @@
-import { DEFAULT_SIGNATORY, EXPORTER_DEFAULTS } from '../data/internationalInvoicePresets';
 export const toDMY = (d) => {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d || '');
   return m ? `${m[3]}/${m[2]}/${m[1]}` : d || '';
@@ -58,8 +57,8 @@ export const buildCertificateDefaults = (inv) => {
     grossWeight: inv.grossWeight || '',
     invoiceNo: inv.invoiceNo || '',
     totalPackages: inv.totalPackages || '',
-    signerName: DEFAULT_SIGNATORY.name,
-    signerDesignation: DEFAULT_SIGNATORY.designation,
+    signerName: inv.signatoryName || '',
+    signerDesignation: inv.signatoryDesignation || '',
     footer: CERT_FOOTER,
   };
 };
@@ -70,10 +69,10 @@ export const buildAuthorisationDefaults = (inv) => {
     body: LETTER_BODY,
     company: c.company || '',
     gstin: c.gstin || '',
-    signerName: `MR ${DEFAULT_SIGNATORY.name}`,
-    designation: DEFAULT_SIGNATORY.designation,
+    signerName: inv.signatoryName ? `MR ${inv.signatoryName}` : '',
+    designation: inv.signatoryDesignation || '',
     date: toDMY(inv.invoiceDate),
-    mobile: DEFAULT_SIGNATORY.mobile,
+    mobile: inv.signatoryMobile || '',
   };
 };
 
@@ -94,15 +93,14 @@ const num2 = (v) => (v === '' || v == null || isNaN(Number(v)) ? v || '' : Numbe
 export const buildPackingListDefaults = (inv) => {
   const c = inv.consignorDetails || {};
   const e = inv.consigneeDetails || {};
-  const X = EXPORTER_DEFAULTS;
   const items = inv.items || [];
   return {
     invoiceNo: inv.invoiceNo || '',
     invoiceDate: fmtDate(inv.invoiceDate),
     buyersOrder: inv.buyersOrderNo || '',
     otherRef: inv.otherRef || '',
-    iec: X.iecCode,
-    ad: X.adCode,
+    iec: inv.iecCode || '',
+    ad: inv.adCode || '',
     buyerOther: 'SAME AS CONSIGNEE',
     exporterBlock: join([
       c.company || false,
@@ -112,9 +110,9 @@ export const buildPackingListDefaults = (inv) => {
     ]),
     exporterZip: c.pin || '',
     exporterCountry: 'INDIA',
-    exporterContact: X.contactPerson,
-    exporterTel: X.mobile,
-    exporterEmail: X.email,
+    exporterContact: inv.contactPerson || '',
+    exporterTel: inv.exporterMobile || c.phone || '',
+    exporterEmail: inv.exporterEmail || '',
     consigneeBlock: join([e.name || false, e.company || false, e.address || false, e.city || false, e.country || false]),
     consigneeZip: zipOf(e.city),
     consigneeCountry: e.country || '',
@@ -126,7 +124,7 @@ export const buildPackingListDefaults = (inv) => {
     preCarriage: '',
     placeOfReceipt: '',
     vessel: 'AIR',
-    portLoading: X.portOfLoading,
+    portLoading: inv.portOfLoading || '',
     portDischarge: inv.portOfDischarge || '',
     finalDest: inv.finalDestination || '',
     termsDelivery: 'FOC',
@@ -167,7 +165,6 @@ export const SLI_DOCS = [
 export const buildSliDefaults = (inv) => {
   const c = inv.consignorDetails || {};
   const e = inv.consigneeDetails || {};
-  const X = EXPORTER_DEFAULTS;
   const cur = inv.currencyCode || 'USD';
   const d = {
     shipper: c.company || '',
@@ -175,14 +172,14 @@ export const buildSliDefaults = (inv) => {
     invoiceNo: inv.invoiceNo || '',
     invoiceDate: fmtDate(inv.invoiceDate, '.'),
     awb: inv.awbNo || '',
-    iec: X.iecCode,
-    branch: X.iecBranchCode,
-    pan: X.pan,
+    iec: inv.iecCode || '',
+    branch: inv.iecBankCode || '',
+    pan: inv.pan || '',
     gstin: c.gstin ? `GSTIN:${c.gstin}` : '',
     igstA: 'N/A (SAMPLE)',
     igstB: 'YES',
     igstC: 'TAXABLE AMOUNT -\nIGST RATE -\nIGST AMOUNT -\nCess -',
-    adCode: X.adCode,
+    adCode: inv.adCode || '',
     incoterms: '',
     nature: 'SAMPLE',
     fob: `${Number(inv.totalAmount) || 0} ${cur}`,
@@ -190,8 +187,8 @@ export const buildSliDefaults = (inv) => {
     pkgs: inv.totalPackages || '',
     net: num2(inv.netWeight),
     gross: num2(inv.grossWeight),
-    state: X.stateOfOrigin,
-    district: X.districtOfOrigin,
+    state: inv.stateOfOrigin || '',
+    district: inv.districtOfOrigin || '',
     pta: 'NCPTI - Preferential Trade Benefit not claimed at Importing Country',
     special: '',
   };
@@ -214,10 +211,10 @@ export const buildAnnexureDefaults = (inv) => ({
   termsDelivery: 'AP',
   previousExport: '',
   otherInfo: '',
-  place: 'MUMBAI',
+  place: inv.consignorDetails?.city || '',
   date: fmtDate(inv.invoiceDate, '.'),
   company: (inv.consignorDetails || {}).company || '',
-  designation: 'DIRECTOR',
+  designation: '',
 });
 
 /* ---------------- Non-SCOMET declaration ---------------- */
@@ -227,7 +224,7 @@ export const buildNonScometDefaults = (inv) => {
   const goods = (inv.items || []).map((i) => i.description).filter(Boolean).join(' , ');
   const addr = [(e.address || '').replace(/\n/g, ' , '), e.city, e.country].filter(Boolean).join(' , ');
   return {
-    toBlock: 'TO,\nAssistant Commissioner Of Customs.- EXPORT\nSAHAR ACC,ANDHERI (E)\nMUMBAI',
+    toBlock: '',
     invoiceRef: `${inv.invoiceNo || ''} .DT. ${fmtDate(inv.invoiceDate, '.')}`,
     body: [
       `We are exporting ${goods} To ${e.company || e.name || ''} which is our factory at ${addr}`,

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import styles from '../styles/form.module.css';
+import { authenticatedFetch } from '../lib/supabaseClient';
 
 const ProductSelector = ({ onSelect }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     fetchProducts();
@@ -11,12 +13,20 @@ const ProductSelector = ({ onSelect }) => {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('/api/products');
+      const response = await authenticatedFetch('/api/products');
+      if (!response.ok) throw new Error(`Failed to load products (${response.status})`);
+
       const data = await response.json();
-      setProducts(data);
-      setLoading(false);
+      const productList = Array.isArray(data) ? data : data.products;
+      if (!Array.isArray(productList)) {
+        throw new Error('Product API returned an invalid product list');
+      }
+
+      setProducts(productList);
     } catch (error) {
       console.error('Error fetching products:', error);
+      setLoadError('Unable to load products. Please try again later.');
+    } finally {
       setLoading(false);
     }
   };
@@ -29,6 +39,7 @@ const ProductSelector = ({ onSelect }) => {
   };
 
   if (loading) return <div className={styles.loading}>Loading products...</div>;
+  if (loadError) return <div className={styles.error} role="alert">{loadError}</div>;
 
   return (
     <div className={styles.formControl}>

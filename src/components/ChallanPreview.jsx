@@ -76,8 +76,7 @@ const ChallanPreview = ({ challanData, senderData, onClose }) => {
   <div>FROM,</div>
   <div className={styles.big}>{senderData?.company}</div>
   
-  {/* Show CARE OFF only for Sennheiser (not for Bruker) */}
-  {senderData?.careOf && !senderData?.company?.toUpperCase().includes('BRUKER') && (
+  {senderData?.careOf && (
     <>
       <div className={styles.normal}>CARE OFF</div>
       <div>{senderData.careOf}</div>

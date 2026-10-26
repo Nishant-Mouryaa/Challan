@@ -1,6 +1,6 @@
 # DC Challan - Delivery Challan Management System
 
-Automated delivery challan generator for Sennheiser Electronics India Pvt Ltd.
+Business delivery challan and international invoice management system.
 
 ## Features
 
@@ -15,6 +15,7 @@ Automated delivery challan generator for Sennheiser Electronics India Pvt Ltd.
 - ✅ Challan history and search functionality
 - ✅ Supabase-backed storage for challans and international invoices
 - ✅ Edit and reprint saved challans, invoices, and their supporting documents
+- ✅ Email/password authentication with separate business workspaces
 
 ## Tech Stack
 
@@ -39,22 +40,25 @@ git clone <repository-url>
 cd dc-challan-system
 ```
 
-## Supabase document storage
+## Supabase setup and tenant isolation
 
-Saved challans and international invoices are stored in Supabase PostgreSQL. Invoice records also retain the editable data for their certificates, DHL authorisation, and mode-specific supporting documents. PDFs are generated from those saved fields when printed or downloaded.
+Saved challans, international invoices, and business setup records are stored in Supabase PostgreSQL. Authenticated API requests are scoped to the signed-in user's workspace, and row-level security also protects workspace-owned tables.
 
-1. Create a Supabase project.
-2. In the Supabase SQL Editor, run [`supabase/migrations/20261023180000_create_documents.sql`](./supabase/migrations/20261023180000_create_documents.sql).
-3. Add the following variables to a local `.env.local` file and to the Vercel project's Environment Variables:
+1. Create a Supabase project and enable the Email provider under **Authentication → Providers**. Configure the project's Site URL and allowed redirect URLs to include `<your-app-url>/login`.
+2. Add these variables to a local `.env.local` file and to the Vercel project's Environment Variables:
 
    ```text
    SUPABASE_URL=https://<project-ref>.supabase.co
    SUPABASE_SERVICE_ROLE_KEY=<server-only-service-role-key>
+   NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=<public-anon-key>
    ```
 
+   Keep the service-role key server-side: never add a `NEXT_PUBLIC_` prefix or commit its value. The anon key is intended for the browser; database access remains constrained by row-level security.
+3. In the Supabase SQL Editor, run [`supabase/migrations/20261023180000_create_documents.sql`](./supabase/migrations/20261023180000_create_documents.sql) if the `documents` table has not been created yet.
+4. Run [`supabase/migrations/20261026190000_add_workspaces_and_auth.sql`](./supabase/migrations/20261026190000_add_workspaces_and_auth.sql). It creates workspace membership, tenant-owned records, row-level security policies, and the signup trigger. Existing database documents are assigned to the legacy workspace; the existing clients, senders, and products are seeded into that workspace.
+5. If legacy challan/invoice JSON files still need to be imported, run `npm run migrate:documents` after the tenant migration. The script imports or updates archived legacy documents in the initial workspace.
+6. The migration reserves the legacy workspace for the configured initial owner email. That owner must sign up with the same email to claim its data; other signups create separate empty workspaces. New users can add their own clients, senders, and products under **Business setup**.
+7. Deploy only after both database migrations and the required environment variables are configured. The app's API routes require authentication.
 
-   Keep the service-role key server-side: do not add a `NEXT_PUBLIC_` prefix or commit the value.
-4. After the table and environment variables are ready, run `npm run migrate:documents` once from the project root. This imports the existing JSON challans and invoices, then moves those legacy files from `public/data` into `data/legacy-documents` so they are no longer directly served as public files.
-5. Deploy or restart the app. New and edited records will use Supabase.
-
-The document API currently has no sign-in flow. Protect the Vercel deployment with access control before storing confidential business documents.
+International invoice business details and supporting-document defaults now start blank rather than using another business's shared hard-coded data. Fill them in per invoice. Team invitations and multi-user workspace membership are not included yet; each workspace currently has one owner account.

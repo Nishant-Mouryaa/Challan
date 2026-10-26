@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import styles from '../styles/form.module.css';
+import { authenticatedFetch } from '../lib/supabaseClient';
 
 const ClientSelector = ({ onSelect, selectedClientId }) => {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isCustom, setIsCustom] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     fetchClients();
@@ -12,12 +14,14 @@ const ClientSelector = ({ onSelect, selectedClientId }) => {
 
   const fetchClients = async () => {
     try {
-      const response = await fetch('/api/clients');
+      const response = await authenticatedFetch('/api/clients');
+      if (!response.ok) throw new Error('Failed to fetch clients');
       const data = await response.json();
       setClients(data);
-      setLoading(false);
     } catch (error) {
       console.error('Error fetching clients:', error);
+      setLoadError(error.message || 'Unable to load clients');
+    } finally {
       setLoading(false);
     }
   };
@@ -35,6 +39,7 @@ const ClientSelector = ({ onSelect, selectedClientId }) => {
   };
 
   if (loading) return <div className={styles.loading}>Loading clients...</div>;
+  if (loadError) return <div className={styles.error} role="alert">{loadError}</div>;
 
   return (
     <div className={styles.formControl}>

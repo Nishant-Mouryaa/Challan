@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from './supabaseAdmin';
+import { requireWorkspace } from './apiAuth';
 
 const TABLE = 'documents';
 
@@ -38,9 +39,10 @@ function toPayload(data) {
   return payload;
 }
 
-function toRow(kind, data) {
+function toRow(kind, data, workspaceId) {
   const config = documentConfig[kind];
   return {
+    workspace_id: workspaceId,
     kind,
     document_number: String(config.number(data)),
     document_date: config.date(data) || null,
@@ -73,12 +75,16 @@ export async function handleDocumentCollection(req, res, kind) {
   }
 
   try {
+    const access = await requireWorkspace(req, res);
+    if (!access) return;
+
     const supabase = getSupabaseAdmin();
 
     if (req.method === 'GET') {
       const { data, error } = await supabase
         .from(TABLE)
         .select(recordColumns)
+        .eq('workspace_id', access.workspace.id)
         .eq('kind', kind)
         .order('created_at', { ascending: false });
 
@@ -93,7 +99,7 @@ export async function handleDocumentCollection(req, res, kind) {
 
     const { data, error } = await supabase
       .from(TABLE)
-      .insert(toRow(kind, body))
+      .insert(toRow(kind, body, access.workspace.id))
       .select(recordColumns)
       .single();
 
@@ -114,12 +120,16 @@ export async function handleDocumentItem(req, res, kind) {
   }
 
   try {
+    const access = await requireWorkspace(req, res);
+    if (!access) return;
+
     const supabase = getSupabaseAdmin();
 
     if (req.method === 'GET') {
       const { data, error } = await supabase
         .from(TABLE)
         .select(recordColumns)
+        .eq('workspace_id', access.workspace.id)
         .eq('kind', kind)
         .eq('id', id)
         .maybeSingle();
@@ -133,6 +143,7 @@ export async function handleDocumentItem(req, res, kind) {
       const { data: current, error: readError } = await supabase
         .from(TABLE)
         .select(recordColumns)
+        .eq('workspace_id', access.workspace.id)
         .eq('kind', kind)
         .eq('id', id)
         .maybeSingle();
@@ -153,9 +164,10 @@ export async function handleDocumentItem(req, res, kind) {
       const { data, error } = await supabase
         .from(TABLE)
         .update({
-          ...toRow(kind, updatedDocument),
+          ...toRow(kind, updatedDocument, access.workspace.id),
           updated_at: new Date().toISOString(),
         })
+        .eq('workspace_id', access.workspace.id)
         .eq('kind', kind)
         .eq('id', id)
         .select(recordColumns)
@@ -168,6 +180,7 @@ export async function handleDocumentItem(req, res, kind) {
     const { data, error } = await supabase
       .from(TABLE)
       .delete()
+      .eq('workspace_id', access.workspace.id)
       .eq('kind', kind)
       .eq('id', id)
       .select('id')

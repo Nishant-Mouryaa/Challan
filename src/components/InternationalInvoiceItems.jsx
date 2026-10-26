@@ -1,6 +1,5 @@
 import React from 'react';
 import styles from '../styles/form.module.css';
-import { PRODUCTS } from '../data/internationalInvoicePresets';
 import { getMode } from '../data/invoiceModes';
 
 const InternationalInvoiceItems = ({ items, onItemChange, onAddItem, onRemoveItem, modeId }) => {
@@ -58,22 +57,6 @@ const InternationalInvoiceItems = ({ items, onItemChange, onAddItem, onRemoveIte
                 </td>
 
                 <td>
-                  <select
-                    value=""
-                    onChange={(e) => {
-                      const p = PRODUCTS.find((x) => x.id === e.target.value);
-                      if (p) onItemChange(index, p.data);
-                    }}
-                    className={styles.itemInput}
-                    style={{ marginBottom: '4px', fontSize: '0.85rem' }}
-                  >
-                    <option value="">Select product…</option>
-                    {PRODUCTS.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.label}
-                      </option>
-                    ))}
-                  </select>
                   <textarea
                     value={item.description || ''}
                     onChange={(e) => onItemChange(index, { description: e.target.value })}

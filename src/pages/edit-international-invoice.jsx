@@ -6,6 +6,7 @@ import InternationalInvoiceItems from '../components/InternationalInvoiceItems';
 import InternationalInvoicePreview from '../components/InternationalInvoicePreview';
 import ExportDocumentsModal from '../components/ExportDocumentsModal';
 import { useInternationalInvoice } from '../hooks/useInternationalInvoice';
+import { authenticatedFetch } from '../lib/supabaseClient';
 
 export default function EditInternationalInvoice() {
   const router = useRouter();
@@ -40,7 +41,7 @@ export default function EditInternationalInvoice() {
 
   const fetchInvoice = async () => {
     try {
-      const response = await fetch(`/api/international-invoices/${id}`);
+      const response = await authenticatedFetch(`/api/international-invoices/${id}`);
       const invoice = await response.json();
       if (!response.ok) throw new Error(invoice.error || 'Failed to load invoice');
       
@@ -63,7 +64,7 @@ export default function EditInternationalInvoice() {
     setIsSaving(true);
     try {
       // Update the invoice
-      const response = await fetch(`/api/international-invoices/${id}`, {
+      const response = await authenticatedFetch(`/api/international-invoices/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(invoiceData),

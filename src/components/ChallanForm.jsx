@@ -26,7 +26,6 @@ const ChallanForm = ({ initialData = null }) => {
   const [loading, setLoading] = useState(false);
 
   const handleSenderSelect = (sender) => {
-    console.log('Sender selected:', sender);
     if (sender) {
       updateSenderDetails({
         company: sender.company || '',
@@ -43,7 +42,6 @@ const ChallanForm = ({ initialData = null }) => {
   };
 
   const handleClientSelect = (client) => {
-    console.log('Client selected:', client);
     if (client) {
       updateReceiverDetails({
         clientId: client.id,
@@ -88,8 +86,6 @@ const ChallanForm = ({ initialData = null }) => {
       setLoading(false);
     }
   };
-
-  console.log('Current challan data:', challanData); // Debug log
 
   return (
     <div className={styles.formContainer}>

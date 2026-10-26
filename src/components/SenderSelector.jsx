@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styles from '../styles/form.module.css';
+import { authenticatedFetch } from '../lib/supabaseClient';
 
 const SenderSelector = ({ 
   senderDetails, 
@@ -9,6 +10,7 @@ const SenderSelector = ({
   const [senders, setSenders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSenderId, setSelectedSenderId] = useState(1);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     fetchSenders();
@@ -16,12 +18,10 @@ const SenderSelector = ({
 
   const fetchSenders = async () => {
     try {
-      const response = await fetch('/api/senders');
+      const response = await authenticatedFetch('/api/senders');
       if (!response.ok) throw new Error('Failed to fetch senders');
       const data = await response.json();
-      console.log('Fetched senders:', data);
       setSenders(data);
-      setLoading(false);
       
       // Load first sender by default
       if (data && data.length > 0) {
@@ -30,18 +30,18 @@ const SenderSelector = ({
       }
     } catch (error) {
       console.error('Error fetching senders:', error);
+      setLoadError(error.message || 'Unable to load senders');
+    } finally {
       setLoading(false);
     }
   };
 
   const handleSenderChange = (e) => {
     const senderId = parseInt(e.target.value);
-    console.log('Selected sender ID:', senderId);
     
     if (!isNaN(senderId)) {
       setSelectedSenderId(senderId);
       const selectedSender = senders.find((s) => s.id === senderId);
-      console.log('Selected sender:', selectedSender);
       
       if (selectedSender) {
         onSenderSelect(selectedSender);
@@ -50,7 +50,6 @@ const SenderSelector = ({
   };
 
   const handleFieldChange = (field, value) => {
-    console.log(`Updating sender field: ${field} = ${value}`);
     onSenderDetailsChange({
       [field]: value,
     });
@@ -60,13 +59,11 @@ const SenderSelector = ({
     return <div className={styles.loading}>Loading senders...</div>;
   }
 
+  if (loadError) return <div className={styles.error} role="alert">{loadError}</div>;
+
   if (!senders || senders.length === 0) {
     return <div className={styles.error}>No senders available</div>;
   }
-
-  // Check if current sender is Bruker
-  const isBruker = senderDetails.company?.toUpperCase().includes('BRUKER');
-  const currentSender = senders.find(s => s.id === selectedSenderId);
 
   return (
     <div>
@@ -107,28 +104,16 @@ const SenderSelector = ({
             />
           </div>
 
-          {/* Show Care Of only for Sennheiser, NOT for Bruker */}
-          {!isBruker && (
-            <div className={styles.formControl}>
-              <label>Care Of (Optional)</label>
-              <input
-                type="text"
-                value={senderDetails.careOf || ''}
-                onChange={(e) => handleFieldChange('careOf', e.target.value)}
-                placeholder="Care Of name"
-                className={styles.formControl}
-              />
-            </div>
-          )}
-
-          {/* If Bruker selected, show a hint instead */}
-          {isBruker && (
-            <div className={styles.formControl}>
-              <label style={{ color: '#666', fontStyle: 'italic' }}>
-                ℹ️ Care Of field is not needed for {currentSender?.company}
-              </label>
-            </div>
-          )}
+          <div className={styles.formControl}>
+            <label>Care Of (Optional)</label>
+            <input
+              type="text"
+              value={senderDetails.careOf || ''}
+              onChange={(e) => handleFieldChange('careOf', e.target.value)}
+              placeholder="Care Of name"
+              className={styles.formControl}
+            />
+          </div>
         </div>
 
         <div className={styles.formControl}>
@@ -144,20 +129,14 @@ const SenderSelector = ({
 
         <div className={styles.formRow}>
           <div className={styles.formControl}>
-            <label>Area / Region {isBruker && '*'}</label>
+            <label>Area / Region (Optional)</label>
             <input
               type="text"
               value={senderDetails.area || ''}
               onChange={(e) => handleFieldChange('area', e.target.value)}
-              placeholder={isBruker ? "e.g., ANDHERI (E)" : "e.g., ANDHERI (E) (Optional)"}
+              placeholder="Area or region"
               className={styles.formControl}
-              required={isBruker}
             />
-            {isBruker && (
-              <small style={{ color: '#666', marginTop: '4px', display: 'block' }}>
-                Area is required for {currentSender?.company}
-              </small>
-            )}
           </div>
           <div className={styles.formControl}>
             <label>City *</label>
@@ -217,21 +196,6 @@ const SenderSelector = ({
           </div>
         </div>
 
-        {/* Info box for Bruker */}
-        {isBruker && (
-          <div style={{
-            backgroundColor: '#e7f3ff',
-            border: '1px solid #b3d9ff',
-            padding: '1rem',
-            borderRadius: '4px',
-            marginTop: '1rem',
-            fontSize: '0.9rem',
-            color: '#004085'
-          }}>
-            <strong>📌 Note:</strong> For {currentSender?.company}, the "Care Of" field is hidden. 
-            All sender details will be displayed directly on the challan.
-          </div>
-        )}
       </div>
     </div>
   );

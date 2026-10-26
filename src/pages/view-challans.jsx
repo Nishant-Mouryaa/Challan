@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import styles from '../styles/form.module.css';
 import { formatDate } from '../utils/formatters';
 import ChallanPreview from '../components/ChallanPreview';
+import { authenticatedFetch } from '../lib/supabaseClient';
 
 export default function ViewChallans() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function ViewChallans() {
   const fetchChallans = async () => {
     try {
       setLoadError('');
-      const response = await fetch('/api/challans');
+      const response = await authenticatedFetch('/api/challans');
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to load challans');
       setChallans(data || []);
@@ -42,7 +43,7 @@ export default function ViewChallans() {
   const handleDelete = async (id) => {
     if (confirm('Are you sure you want to delete this challan?')) {
       try {
-        const response = await fetch(`/api/challans/${id}`, { method: 'DELETE' });
+        const response = await authenticatedFetch(`/api/challans/${id}`, { method: 'DELETE' });
         if (!response.ok) throw new Error('Failed to delete challan');
         fetchChallans();
       } catch (error) {

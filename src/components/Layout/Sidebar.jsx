@@ -29,6 +29,10 @@ const navGroups = [
       },
     ],
   },
+  {
+    label: 'Workspace',
+    items: [{ label: 'Business setup', icon: 'settings', href: '/settings' }],
+  },
 ];
 
 const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {

@@ -1,3 +1,5 @@
+import { authenticatedFetch } from '../lib/supabaseClient';
+
 /**
  * Generate unique challan numbers
  * Format: DC-YYYYMMDD-XXXX
@@ -22,7 +24,8 @@ export const generateChallanNumber = () => {
 // Alternative: Sequential numbering (requires database)
 export const getNextChallanNumber = async (prefix = 'DC') => {
   try {
-    const response = await fetch('/api/challans/next-number');
+    const response = await authenticatedFetch('/api/challans/next-number');
+    if (!response.ok) throw new Error('Failed to get next challan number');
     const { number } = await response.json();
     return number;
   } catch (error) {

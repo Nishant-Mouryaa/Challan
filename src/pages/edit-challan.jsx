@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import MainLayout from '../components/Layout/MainLayout';
 import ChallanForm from '../components/ChallanForm';
 import styles from '../styles/form.module.css';
+import { authenticatedFetch } from '../lib/supabaseClient';
 
 export default function EditChallan() {
   const router = useRouter();
@@ -16,7 +17,7 @@ export default function EditChallan() {
     if (!id) return;
 
     let cancelled = false;
-    fetch(`/api/challans/${id}`)
+    authenticatedFetch(`/api/challans/${id}`)
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Failed to load challan');

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { generateChallanNumber } from '../utils/generateChallanNumber';
 import { convertAmountToWords } from '../utils/amountInWords';
+import { authenticatedFetch } from '../lib/supabaseClient';
 
 export const useChallan = (initialData = null) => {
   const [challanData, setChallanData] = useState(
@@ -52,7 +53,7 @@ export const useChallan = (initialData = null) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(
+      const response = await authenticatedFetch(
         initialData?.id ? `/api/challans/${initialData.id}` : '/api/challans',
         {
         method: initialData?.id ? 'PUT' : 'POST',
