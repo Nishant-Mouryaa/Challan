@@ -3,13 +3,14 @@ import styles from '../styles/form.module.css';
 import { authenticatedFetch } from '../lib/supabaseClient';
 
 const SenderSelector = ({ 
+  senderId,
   senderDetails, 
   onSenderSelect, 
   onSenderDetailsChange 
 }) => {
   const [senders, setSenders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedSenderId, setSelectedSenderId] = useState(1);
+  const [selectedSenderId, setSelectedSenderId] = useState('');
   const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
@@ -22,11 +23,23 @@ const SenderSelector = ({
       if (!response.ok) throw new Error('Failed to fetch senders');
       const data = await response.json();
       setSenders(data);
-      
-      // Load first sender by default
-      if (data && data.length > 0) {
-        setSelectedSenderId(data[0].id);
-        onSenderSelect(data[0]);
+
+      if (data.length > 0) {
+        const selectedSender =
+          data.find((sender) => String(sender.id) === String(senderId)) ||
+          data.find(
+            (sender) =>
+              sender.company &&
+              sender.company.trim().toLowerCase() ===
+                senderDetails.company?.trim().toLowerCase()
+          ) ||
+          data[0];
+        setSelectedSenderId(String(selectedSender.id));
+
+        const hasSavedSenderDetails = Object.values(senderDetails).some(
+          (value) => typeof value === 'string' && value.trim()
+        );
+        if (!hasSavedSenderDetails) onSenderSelect(selectedSender);
       }
     } catch (error) {
       console.error('Error fetching senders:', error);
@@ -37,15 +50,12 @@ const SenderSelector = ({
   };
 
   const handleSenderChange = (e) => {
-    const senderId = parseInt(e.target.value);
-    
-    if (!isNaN(senderId)) {
-      setSelectedSenderId(senderId);
-      const selectedSender = senders.find((s) => s.id === senderId);
-      
-      if (selectedSender) {
-        onSenderSelect(selectedSender);
-      }
+    const nextSenderId = e.target.value;
+    setSelectedSenderId(nextSenderId);
+    const selectedSender = senders.find((sender) => String(sender.id) === nextSenderId);
+
+    if (selectedSender) {
+      onSenderSelect(selectedSender);
     }
   };
 

@@ -27,6 +27,7 @@ const ChallanForm = ({ initialData = null }) => {
 
   const handleSenderSelect = (sender) => {
     if (sender) {
+      updateChallanData({ senderId: sender.id });
       updateSenderDetails({
         company: sender.company || '',
         careOf: sender.careOf || '',
@@ -130,6 +131,7 @@ const ChallanForm = ({ initialData = null }) => {
       <fieldset className={styles.fieldset}>
         <legend className={styles.legend}>Sender Details</legend>
         <SenderSelector
+          senderId={challanData.senderId}
           senderDetails={challanData.senderDetails}
           onSenderSelect={handleSenderSelect}
           onSenderDetailsChange={updateSenderDetails}
