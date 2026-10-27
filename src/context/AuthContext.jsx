@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { getSupabaseClient } from '../lib/supabaseClient';
 
 const AuthContext = createContext(null);
@@ -9,6 +9,7 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [configurationError, setConfigurationError] = useState('');
+  const currentUserId = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -18,12 +19,17 @@ export function AuthProvider({ children }) {
       const supabase = getSupabaseClient();
       const {
         data: { subscription: authSubscription },
-      } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      } = supabase.auth.onAuthStateChange((event, nextSession) => {
         if (!active) return;
         setSession(nextSession);
-        setWorkspace(null);
-        setError('');
-        setIsLoading(Boolean(nextSession));
+
+        const nextUserId = nextSession?.user.id || null;
+        if (event === 'SIGNED_OUT' || nextUserId !== currentUserId.current) {
+          currentUserId.current = nextUserId;
+          setWorkspace(null);
+          setError('');
+          setIsLoading(Boolean(nextSession));
+        }
       });
       subscription = authSubscription;
 
@@ -33,6 +39,7 @@ export function AuthProvider({ children }) {
           setError('Unable to restore your session. Please sign in again.');
           console.error('Error restoring authentication session:', sessionError);
         }
+        currentUserId.current = data.session?.user.id || null;
         setSession(data.session);
         if (!data.session) setIsLoading(false);
       });
@@ -47,8 +54,10 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
+  const userId = session?.user.id;
+
   useEffect(() => {
-    if (!session) return undefined;
+    if (!userId) return undefined;
 
     let active = true;
     setIsLoading(true);
@@ -76,7 +85,7 @@ export function AuthProvider({ children }) {
     return () => {
       active = false;
     };
-  }, [session]);
+  }, [userId]);
 
   const signOut = async () => {
     const { error: signOutError } = await getSupabaseClient().auth.signOut();
