@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
+import MainLayout from '../components/Layout/MainLayout';
 import styles from '../styles/form.module.css';
+import layoutStyles from '../styles/layout.module.css';
 import challanStyles from '../styles/challan.module.css';
 import { formatDate } from '../utils/formatters';
 import { authenticatedFetch } from '../lib/supabaseClient';
 
 export default function ViewInternationalInvoices() {
+  const router = useRouter();
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -75,22 +79,27 @@ export default function ViewInternationalInvoices() {
         <title>View International Invoices - Invoice System</title>
       </Head>
 
-      <div className={styles.formContainer}>
-        <div className={styles.formHeader}>
-          <h1>📋 International Invoices</h1>
-          <p>View, edit, and manage all created invoices</p>
+      <MainLayout>
+        <div className={layoutStyles.pageHeader}>
+          <div>
+            <h2 className={layoutStyles.pageTitle}>All international invoices</h2>
+            <p className={layoutStyles.pageSubtitle}>View and manage all created invoices.</p>
+          </div>
+          <div className={layoutStyles.pageActions}>
+            <button
+              type="button"
+              className={layoutStyles.btnOutline}
+              onClick={() => router.push('/')}
+            >
+              ← Back to dashboard
+            </button>
+            <Link href="/international-invoice" className={layoutStyles.btnPrimary}>
+              New invoice
+            </Link>
+          </div>
         </div>
 
         {loadError && <div className={styles.error}>{loadError}</div>}
-
-        {/* Create New Button */}
-        <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-          <Link href="/international-invoice">
-            <button className="btn btn-primary" style={{ padding: '0.75rem 1.5rem' }}>
-              ➕ Create New Invoice
-            </button>
-          </Link>
-        </div>
 
         {/* Search Bar */}
         <div className={styles.formControl} style={{ marginBottom: '2rem' }}>
@@ -294,7 +303,7 @@ export default function ViewInternationalInvoices() {
             </div>
           </div>
         )}
-      </div>
+      </MainLayout>
     </>
   );
 }

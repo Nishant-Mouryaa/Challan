@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
+import MainLayout from '../components/Layout/MainLayout';
 import styles from '../styles/form.module.css';
+import layoutStyles from '../styles/layout.module.css';
 import { formatDate } from '../utils/formatters';
 import ChallanPreview from '../components/ChallanPreview';
 import { authenticatedFetch } from '../lib/supabaseClient';
@@ -67,10 +70,24 @@ export default function ViewChallans() {
         <title>View Challans - DC System</title>
       </Head>
 
-      <div className={styles.formContainer}>
-        <div className={styles.formHeader}>
-          <h1>📊 All Delivery Challans</h1>
-          <p>View and manage all created delivery challans</p>
+      <MainLayout>
+        <div className={layoutStyles.pageHeader}>
+          <div>
+            <h2 className={layoutStyles.pageTitle}>All delivery challans</h2>
+            <p className={layoutStyles.pageSubtitle}>View and manage all created delivery challans.</p>
+          </div>
+          <div className={layoutStyles.pageActions}>
+            <button
+              type="button"
+              className={layoutStyles.btnOutline}
+              onClick={() => router.push('/')}
+            >
+              ← Back to dashboard
+            </button>
+            <Link href="/create-challan" className={layoutStyles.btnPrimary}>
+              New challan
+            </Link>
+          </div>
         </div>
 
         {loadError && <div className={styles.error}>{loadError}</div>}
@@ -173,7 +190,7 @@ export default function ViewChallans() {
             onClose={() => setSelectedChallan(null)}
           />
         )}
-      </div>
+      </MainLayout>
     </>
   );
 }
