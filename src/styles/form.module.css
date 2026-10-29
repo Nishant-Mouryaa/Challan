@@ -173,6 +173,37 @@
   font-size: var(--font-size-sm);
 }
 
+.itemsTable th.quantityColumn {
+  text-align: center;
+}
+
+.itemsTable td.quantityColumn {
+  min-width: 88px;
+  text-align: center;
+}
+
+.itemsTable th.hsnColumn,
+.itemsTable td.hsnColumn {
+  min-width: 120px;
+}
+
+.itemsTable td.hsnColumn .itemInput {
+  min-width: 88px;
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.quantityInput {
+  min-width: 68px;
+  min-height: 42px;
+  border: 2px solid var(--color-border-dark);
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  text-align: center;
+}
+
 .itemsTable td {
   padding: var(--spacing-md);
   border-bottom: 1px solid var(--color-border-light);
@@ -205,6 +236,76 @@
   outline: none;
   border-color: var(--color-red-primary);
   box-shadow: 0 0 0 2px rgba(196, 30, 58, 0.1);
+}
+
+.hsnLookup {
+  position: relative;
+  margin-bottom: var(--spacing-sm);
+}
+
+.hsnLookup label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-semibold);
+}
+
+.hsnLookupStatus,
+.hsnLookupError {
+  margin-top: 4px;
+  font-size: 0.75rem;
+}
+
+.hsnLookupStatus {
+  color: var(--color-text-secondary);
+}
+
+.hsnLookupError {
+  color: var(--color-red-primary);
+}
+
+.hsnSuggestions {
+  max-height: 240px;
+  margin: 4px 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+.hsnSuggestion {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--spacing-sm);
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.hsnSuggestion:hover,
+.hsnSuggestion:focus-visible {
+  outline: none;
+  background: rgba(196, 30, 58, 0.08);
+}
+
+.hsnSuggestion strong {
+  color: var(--color-red-primary);
+}
+
+.hsnSuggestion span {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 /* ========================================

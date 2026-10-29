@@ -6,7 +6,8 @@ const SenderSelector = ({
   senderId,
   senderDetails, 
   onSenderSelect, 
-  onSenderDetailsChange 
+  onSenderDetailsChange,
+  showDetails = true,
 }) => {
   const [senders, setSenders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +74,25 @@ const SenderSelector = ({
 
   if (!senders || senders.length === 0) {
     return <div className={styles.error}>No senders available</div>;
+  }
+
+  if (!showDetails) {
+    return (
+      <div className={styles.formControl}>
+        <label><strong>Select Sender to Prefill</strong></label>
+        <select
+          value={selectedSenderId}
+          onChange={handleSenderChange}
+          className={styles.formControl}
+        >
+          {senders.map((sender) => (
+            <option key={sender.id} value={sender.id}>
+              {sender.company} - {sender.city}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
   }
 
   return (

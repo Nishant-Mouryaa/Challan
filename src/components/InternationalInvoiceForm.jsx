@@ -7,6 +7,7 @@ import ExportDocumentsModal from './ExportDocumentsModal';
 import InvoiceModeSelector from './InvoiceModeSelector';
 import ModeDetails from './ModeDetails';
 import { getMode } from '../data/invoiceModes';
+import InternationalPartySelectors from './InternationalPartySelectors';
 
 const InternationalInvoiceForm = () => {
   const {
@@ -133,6 +134,13 @@ onChange={(e) =>
       {/* Consignor Details */}
       <fieldset className={styles.fieldset}>
         <legend className={styles.legend}>Consignor Details</legend>
+        <InternationalPartySelectors
+          invoiceData={invoiceData}
+          updateInvoiceData={updateInvoiceData}
+          updateConsignorDetails={updateConsignorDetails}
+          updateConsigneeDetails={updateConsigneeDetails}
+          showSender
+        />
 
         <div className={styles.formRow}>
           <div className={styles.formControl}>
@@ -271,6 +279,13 @@ onChange={(e) =>
       {/* Consignee Details */}
       <fieldset className={styles.fieldset}>
         <legend className={styles.legend}>Consignee Details *</legend>
+        <InternationalPartySelectors
+          invoiceData={invoiceData}
+          updateInvoiceData={updateInvoiceData}
+          updateConsignorDetails={updateConsignorDetails}
+          updateConsigneeDetails={updateConsigneeDetails}
+          showReceiver
+        />
         
         <div className={styles.formRow}>
           <div className={styles.formControl}>

@@ -7,6 +7,7 @@ import InternationalInvoicePreview from '../components/InternationalInvoicePrevi
 import ExportDocumentsModal from '../components/ExportDocumentsModal';
 import { useInternationalInvoice } from '../hooks/useInternationalInvoice';
 import { authenticatedFetch } from '../lib/supabaseClient';
+import InternationalPartySelectors from '../components/InternationalPartySelectors';
 
 export default function EditInternationalInvoice() {
   const router = useRouter();
@@ -182,6 +183,13 @@ export default function EditInternationalInvoice() {
         {/* Consignor Details */}
         <fieldset className={styles.fieldset}>
           <legend className={styles.legend}>Consignor Details</legend>
+          <InternationalPartySelectors
+            invoiceData={invoiceData}
+            updateInvoiceData={updateInvoiceData}
+            updateConsignorDetails={updateConsignorDetails}
+            updateConsigneeDetails={updateConsigneeDetails}
+            showSender
+          />
           
           <div className={styles.formRow}>
             <div className={styles.formControl}>
@@ -259,6 +267,13 @@ export default function EditInternationalInvoice() {
         {/* Consignee Details */}
         <fieldset className={styles.fieldset}>
           <legend className={styles.legend}>Consignee Details *</legend>
+          <InternationalPartySelectors
+            invoiceData={invoiceData}
+            updateInvoiceData={updateInvoiceData}
+            updateConsignorDetails={updateConsignorDetails}
+            updateConsigneeDetails={updateConsigneeDetails}
+            showReceiver
+          />
           
           <div className={styles.formRow}>
             <div className={styles.formControl}>

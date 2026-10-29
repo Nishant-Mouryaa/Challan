@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from '../styles/form.module.css';
 import { getMode } from '../data/invoiceModes';
+import HsnCodeLookup from './HsnCodeLookup';
 
 const InternationalInvoiceItems = ({ items, onItemChange, onAddItem, onRemoveItem, modeId }) => {
   const mode = getMode(modeId);
@@ -20,20 +21,57 @@ const InternationalInvoiceItems = ({ items, onItemChange, onAddItem, onRemoveIte
           <thead>
             <tr>
               <th style={{ width: '5%' }}>S.No</th>
+              <th className={styles.quantityColumn} style={{ width: '9%' }}>
+                Quantity
+              </th>
+              <th className={styles.hsnColumn} style={{ width: '18%' }}>
+                HSN Code
+              </th>
               <th style={{ width: '6%' }}>Box</th>
-              <th style={{ width: '9%' }}>HSN Code</th>
-              <th style={{ width: '27%' }}>Description of Goods</th>
-              <th style={{ width: '7%' }}>Qty</th>
+              <th style={{ width: '20%' }}>Description of Goods</th>
               <th style={{ width: '11%' }}>Rate/Piece</th>
               <th style={{ width: '11%' }}>Amount</th>
-              <th style={{ width: '15%' }}>Weight Info</th>
-              <th style={{ width: '9%' }}>Action</th>
+              <th style={{ width: '12%' }}>Weight Info</th>
+              <th style={{ width: '8%' }}>Action</th>
             </tr>
           </thead>
           <tbody>
             {items.map((item, index) => (
               <tr key={index}>
                 <td style={{ textAlign: 'center' }}>{index + 1}</td>
+
+                <td className={styles.quantityColumn}>
+                  <input
+                    type="number"
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) =>
+                      onItemChange(index, { quantity: parseInt(e.target.value) || 0 })
+                    }
+                    aria-label={`Quantity for item ${index + 1}`}
+                    className={`${styles.itemInput} ${styles.quantityInput}`}
+                  />
+                </td>
+
+                <td className={styles.hsnColumn}>
+                  <HsnCodeLookup
+                    itemIndex={index}
+                    onSelect={(match) =>
+                      onItemChange(index, {
+                        hsnCode: match.code,
+                        description: match.description,
+                      })
+                    }
+                  />
+                  <input
+                    type="text"
+                    value={item.hsnCode || ''}
+                    onChange={(e) => onItemChange(index, { hsnCode: e.target.value })}
+                    placeholder="HSN"
+                    aria-label={`HSN code for item ${index + 1}`}
+                    className={styles.itemInput}
+                  />
+                </td>
 
                 {/* Box no: items with the same box are grouped on the invoice */}
                 <td>
@@ -42,16 +80,6 @@ const InternationalInvoiceItems = ({ items, onItemChange, onAddItem, onRemoveIte
                     value={item.boxNo || ''}
                     onChange={(e) => onItemChange(index, { boxNo: e.target.value })}
                     placeholder="1"
-                    className={styles.itemInput}
-                  />
-                </td>
-
-                <td>
-                  <input
-                    type="text"
-                    value={item.hsnCode || ''}
-                    onChange={(e) => onItemChange(index, { hsnCode: e.target.value })}
-                    placeholder="HSN"
                     className={styles.itemInput}
                   />
                 </td>
@@ -95,17 +123,6 @@ const InternationalInvoiceItems = ({ items, onItemChange, onAddItem, onRemoveIte
                   )}
                 </td>
 
-                <td>
-                  <input
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={(e) =>
-                      onItemChange(index, { quantity: parseInt(e.target.value) || 0 })
-                    }
-                    className={styles.itemInput}
-                  />
-                </td>
                 <td>
                   <input
                     type="number"
