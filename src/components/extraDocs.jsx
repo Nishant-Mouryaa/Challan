@@ -387,6 +387,158 @@ const IndemnitySheet = ({ d }) => (
   </div>
 );
 
+/* =============== NON-HAZARDOUS CARGO CERTIFICATE =============== */
+
+const NonHazardousSheet = ({ d }) => (
+  <div className={x.nhWrap}>
+    <div className={x.nhTitle}>
+      Shipper’s Certification for Non-Hazardous Cargo
+    </div>
+
+    <div className={`${x.nhIntro} ${x.pre}`}>
+      {d.certificationText}
+    </div>
+
+    <table className={x.nhTable}>
+      <thead>
+        <tr>
+          <th>
+            UN / ID Number
+            <span className={x.nhHint}>
+              When not applicable, enter N.A.
+            </span>
+          </th>
+
+          <th>
+            Proper Description of Goods
+            <span className={x.nhHint}>
+              Trade names not permitted. Specify each article separately
+              with its chemical or proper shipping name.
+            </span>
+          </th>
+
+          <th>
+            Quantity per package
+            <div className={x.nhValue}>{d.quantityPerPackage}</div>
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr>
+          <td className={x.pre}>{d.unIdNumber}</td>
+
+          <td className={x.pre}>{d.goodsDescription}</td>
+
+          <td>
+            <div className={x.nhWeight}>
+              <strong>NET WEIGHT:</strong>
+              <div>{d.netWeight}</div>
+            </div>
+
+            <div className={x.nhWeight}>
+              <strong>GROSS WEIGHT:</strong>
+              <div>{d.grossWeight}</div>
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td colSpan={3}>
+            <strong>TOTAL NUMBER OF PACKAGES:</strong> {d.packageCount}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div className={x.nhDetails}>
+      <div>
+        <div className={x.nhSectionTitle}>CONSIGNOR</div>
+        <div className={x.pre}>{d.consignorBlock}</div>
+
+        <div className={x.nhSectionTitle}>CONSIGNEE</div>
+        <div className={x.pre}>{d.consigneeBlock}</div>
+      </div>
+
+      <div>
+        <div className={x.nhDetailRow}>
+          <strong>Name:</strong> {d.signatoryName}
+        </div>
+
+        <div className={x.nhDetailRow}>
+          <strong>Designation:</strong> {d.designation}
+        </div>
+
+        <div className={`${x.nhCompetency} ${x.pre}`}>
+          {d.competencyNote}
+        </div>
+      </div>
+    </div>
+
+    <div className={x.nhFooter}>
+      <div>
+        <div>Place: {d.place}</div>
+        <div>Date: {d.date}</div>
+      </div>
+
+      <div className={x.nhSignature}>
+        SIGNATURE / COMPANY STAMP
+      </div>
+    </div>
+
+    <div className={`${x.nhWarning} ${x.pre}`}>
+      {d.warningText}
+    </div>
+
+    <div className={`${x.nhCopies} ${x.pre}`}>
+      {d.copiesNote}
+    </div>
+  </div>
+);
+
+/* =============== EXPORT CLEARANCE AUTHORITY LETTER =============== */
+
+const ExportAuthoritySheet = ({ d }) => (
+  <div className={x.eaWrap}>
+    <div className={x.eaDate}>Date: {d.date}</div>
+
+    <div className={`${x.eaTo} ${x.pre}`}>
+      {d.toBlock}
+    </div>
+
+    <div className={x.eaSubject}>
+      Subject: {d.subject}
+    </div>
+
+    <div className={x.eaSalutation}>Respected Sir / Madam,</div>
+
+    <div className={x.eaBody}>
+      <p>
+        We, the undersigned {d.authorizerName}, under our risk and
+        responsibility, hereby authorize {d.courierName} to clear{' '}
+        {d.consignmentScope} on our behalf.
+      </p>
+
+      <p className={x.pre}>{d.responsibilityText}</p>
+    </div>
+
+    <div className={x.eaThanks}>Thanking you,</div>
+
+    <div className={x.eaCompany}>
+      For {d.companyName}
+    </div>
+
+    <div className={x.eaSignatureSpace} />
+
+    <div>{d.authorizerName}</div>
+    {d.designation && <div>{d.designation}</div>}
+
+    <div className={x.eaSignatureLabel}>
+      Authorised Signatory / Company Stamp
+    </div>
+  </div>
+);
+
 
 /* =============== FIELD LISTS (edit panel) =============== */
 const F = (k, label, o = {}) => ({ k, label, ...o });
@@ -470,6 +622,217 @@ const indemnityFields = [
   F('awbNo', 'AWB No'), F('contents', 'Contents', { rows: 3, wide: true }),
 ];
 
+const nonHazardousFields = [
+  F('date', 'Date'),
+  F('place', 'Place'),
+
+  F('unIdNumber', 'UN / ID number', {
+    rows: 2,
+  }),
+
+  F('quantityPerPackage', 'Quantity per package'),
+  F('packageCount', 'Total number of packages'),
+
+  F('goodsDescription', 'Proper description of goods', {
+    rows: 5,
+    wide: true,
+  }),
+
+  F('netWeight', 'Net weight, including unit'),
+  F('grossWeight', 'Gross weight, including unit'),
+
+  F('consignorBlock', 'Consignor name and address', {
+    rows: 5,
+    wide: true,
+  }),
+
+  F('consigneeBlock', 'Consignee name and address', {
+    rows: 5,
+    wide: true,
+  }),
+
+  F('signatoryName', 'Signatory name'),
+  F('designation', 'Signatory designation'),
+
+  F('certificationText', 'Certification text', {
+    rows: 7,
+    wide: true,
+  }),
+
+  F('competencyNote', 'Signatory competency note', {
+    rows: 4,
+    wide: true,
+  }),
+
+  F('warningText', 'Warning', {
+    rows: 3,
+    wide: true,
+  }),
+
+  F('copiesNote', 'Copies / filing instructions', {
+    rows: 4,
+    wide: true,
+  }),
+];
+
+const exportAuthorityFields = [
+  F('date', 'Date'),
+
+  F('toBlock', 'Addressee', {
+    rows: 5,
+    wide: true,
+  }),
+
+  F('subject', 'Subject', {
+    wide: true,
+  }),
+
+  F('authorizerName', 'Authorizing person / signatory name'),
+  F('designation', 'Designation'),
+
+  F('companyName', 'Company / shipper name', {
+    wide: true,
+  }),
+
+  F('courierName', 'Authorized courier', {
+    wide: true,
+  }),
+
+  F('consignmentScope', 'Consignment scope / reference', {
+    wide: true,
+  }),
+
+  F('responsibilityText', 'Responsibility declaration', {
+    rows: 6,
+    wide: true,
+  }),
+];
+
+const extraDocDate = (value) => {
+  if (!value) {
+    return new Date().toLocaleDateString('en-GB');
+  }
+
+  // Preserve the calendar date of ISO-style invoice dates.
+  const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T)/);
+
+  if (match) {
+    return `${match[3]}/${match[2]}/${match[1]}`;
+  }
+
+  const parsed = new Date(value);
+
+  return Number.isNaN(parsed.getTime())
+    ? String(value)
+    : parsed.toLocaleDateString('en-GB');
+};
+
+const weightWithUnit = (value) => {
+  if (value === undefined || value === null || value === '') {
+    return '';
+  }
+
+  // Packing-list defaults expose these values in KGS.
+  return `${value} KGS`;
+};
+
+const buildNonHazardousDefaults = (data = {}) => {
+  const packing = buildPackingListDefaults(data) || {};
+
+  const goodsDescription = (data.items || [])
+    .map((item) => item.description || '')
+    .filter(Boolean)
+    .join('\n');
+
+  return {
+    date: extraDocDate(data.invoiceDate),
+    place: data.consignorDetails?.city || '',
+
+    // Do not automatically classify the shipment or assume package counts.
+    unIdNumber: '',
+    quantityPerPackage: '',
+    packageCount: '',
+
+    goodsDescription: goodsDescription || packing.goodsDesc || '',
+
+    netWeight: weightWithUnit(packing.netWt),
+    grossWeight: weightWithUnit(packing.grsWt),
+
+    consignorBlock: packing.exporterBlock || '',
+    consigneeBlock: packing.consigneeBlock || '',
+
+    signatoryName: '',
+    designation: '',
+
+    certificationText:
+      'This is to certify that the articles / substances in this shipment ' +
+      'are properly described by name. They are not listed in the forbidden ' +
+      'list in the current edition of the IATA Dangerous Goods Regulations ' +
+      '(DGR) or the alphabetical list of dangerous goods, and do not ' +
+      'correspond to any hazard classes appearing in DGR Section 3, ' +
+      'Classification of Dangerous Goods. They are not known to be ' +
+      'dangerous, i.e. not restricted. Furthermore, the shipper confirms ' +
+      'that the goods are in proper condition for transportation on a ' +
+      'passenger-carrying aircraft. (DGR 8.1.23.)',
+
+    competencyNote:
+      'Note: The undersigned has read and understood the procedures ' +
+      'listed by IATA and ICAO in the DGR manual and is technically ' +
+      'competent to classify and certify the goods tendered for ' +
+      'transportation. The signature requirement should conform to 8.1.4.1.',
+
+    warningText:
+      'Warning: The courier does not carry any commodity / item which ' +
+      'falls under the purview of the IATA DGR manual. Any misdeclaration ' +
+      'will be subject to legal penalties.',
+
+    copiesNote:
+      'Note: 3 original copies of the shipper’s declaration are required ' +
+      'on the shipper’s letterhead.\n\n' +
+      'One copy of the shipper’s certification for non-hazardous cargo, ' +
+      'with the Air Waybill, Invoice and MSDS report, is to be filed at ' +
+      'the origin station / express center; one with the origin gateway; ' +
+      'and one accompanying the shipment.',
+  };
+};
+
+const buildExportAuthorityDefaults = (data = {}) => {
+  const packing = buildPackingListDefaults(data) || {};
+
+  return {
+    date: extraDocDate(data.invoiceDate),
+
+    toBlock:
+      'To\n' +
+      'Deputy Commissioner of Customs\n' +
+      'Export Courier Cell\n' +
+      'EICI Terminal, Mumbai',
+
+    subject: 'Authority Letter to Clear the Export Consignment',
+
+    // Enter the actual person signing; do not assume the company is a person.
+    authorizerName: '',
+    designation: '',
+
+    companyName:
+      data.consignorDetails?.company ||
+      packing.exporterName ||
+      '',
+
+    // Taken from your attached authority-letter template.
+    courierName: 'M/s. UPS Express Pvt Ltd',
+
+    consignmentScope: 'all export consignments',
+
+    responsibilityText:
+      'We further undertake that we are directly responsible if anything ' +
+      'is found contrary to or objectionable against the particulars ' +
+      'mentioned in the invoice or the declaration made by the courier ' +
+      'at the time of clearing our consignment, under the Customs Act, ' +
+      '1962, or any other law for the time being in force.',
+  };
+};
+
 
 /* =============== REGISTRY =============== */
 export const EXTRA_DOCS = [
@@ -516,6 +879,30 @@ export const EXTRA_DOCS = [
       };
     },
     fields: indemnityFields, Sheet: IndemnitySheet, side: 20, margins: { top: 20, bottom: 20 }, letterhead: true },
+
+      {
+    id: 'non_hazardous',
+    label: 'Non-Hazardous Cargo Certificate',
+    file: 'Non-Hazardous-Cargo-Certificate',
+    build: buildNonHazardousDefaults,
+    fields: nonHazardousFields,
+    Sheet: NonHazardousSheet,
+    side: 15,
+    margins: { top: 20, bottom: 15 },
+    letterhead: true,
+  },
+
+  {
+    id: 'export_authority',
+    label: 'Export Clearance Authority Letter',
+    file: 'Export-Clearance-Authority-Letter',
+    build: buildExportAuthorityDefaults,
+    fields: exportAuthorityFields,
+    Sheet: ExportAuthoritySheet,
+    side: 20,
+    margins: { top: 20, bottom: 20 },
+    letterhead: true,
+  },
 
   // --- MODE DOCUMENTS (medicine, electronics) ---
   ...MODE_DOCS,

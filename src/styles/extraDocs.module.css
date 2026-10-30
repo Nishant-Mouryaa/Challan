@@ -212,3 +212,194 @@
   page-break-inside: avoid;
 }
 .indSignSpace { height: 60px; }
+
+/* =============== NON-HAZARDOUS CERTIFICATE =============== */
+
+.nhWrap {
+  color: #000;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10pt;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.nhTitle {
+  margin-bottom: 7mm;
+  text-align: center;
+  font-size: 13pt;
+  font-weight: 700;
+}
+
+.nhIntro {
+  margin-bottom: 5mm;
+  text-align: justify;
+}
+
+.nhTable {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.nhTable th,
+.nhTable td {
+  padding: 3mm;
+  border: 1px solid #000;
+  text-align: left;
+  vertical-align: top;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.nhTable th:nth-child(1) {
+  width: 23%;
+}
+
+.nhTable th:nth-child(2) {
+  width: 47%;
+}
+
+.nhTable th:nth-child(3) {
+  width: 30%;
+}
+
+.nhHint {
+  display: block;
+  margin-top: 2mm;
+  font-size: 8.5pt;
+  font-weight: 400;
+}
+
+.nhValue {
+  margin-top: 3mm;
+  font-weight: 400;
+}
+
+.nhWeight + .nhWeight {
+  margin-top: 6mm;
+}
+
+.nhDetails {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8mm;
+  margin-top: 5mm;
+}
+
+.nhSectionTitle {
+  margin-bottom: 2mm;
+  font-weight: 700;
+}
+
+.nhSectionTitle:not(:first-child) {
+  margin-top: 6mm;
+}
+
+.nhDetailRow {
+  margin-bottom: 3mm;
+}
+
+.nhCompetency {
+  margin-top: 6mm;
+  font-size: 9pt;
+}
+
+.nhFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 8mm;
+  margin-top: 12mm;
+}
+
+.nhFooter > div:first-child {
+  line-height: 1.8;
+}
+
+.nhSignature {
+  min-width: 55mm;
+  padding-top: 12mm;
+  text-align: center;
+}
+
+.nhWarning {
+  margin-top: 7mm;
+  padding-top: 3mm;
+  border-top: 1px dashed #000;
+  font-size: 9pt;
+}
+
+.nhCopies {
+  margin-top: 5mm;
+  padding-top: 3mm;
+  border-top: 1px dashed #000;
+  font-size: 9pt;
+}
+
+/* =============== EXPORT AUTHORITY LETTER =============== */
+
+.eaWrap {
+  color: #000;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 11pt;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.eaDate {
+  margin-bottom: 8mm;
+}
+
+.eaTo {
+  margin-bottom: 9mm;
+}
+
+.eaSubject {
+  margin-bottom: 8mm;
+  text-align: center;
+  font-weight: 700;
+}
+
+.eaSalutation {
+  margin-bottom: 5mm;
+}
+
+.eaBody p {
+  margin: 0 0 6mm;
+  text-align: justify;
+}
+
+.eaThanks {
+  margin-top: 9mm;
+}
+
+.eaCompany {
+  margin-top: 9mm;
+  font-weight: 700;
+}
+
+.eaSignatureSpace {
+  height: 18mm;
+}
+
+.eaSignatureLabel {
+  margin-top: 3mm;
+  font-size: 9pt;
+}
+
+/* Print safeguards without changing other documents' page settings. */
+
+@media print {
+  .nhTitle,
+  .nhTable tr,
+  .nhFooter,
+  .nhCopies,
+  .eaSubject {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .nhTable thead {
+    display: table-header-group;
+  }
+}
