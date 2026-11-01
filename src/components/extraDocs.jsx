@@ -539,6 +539,161 @@ const ExportAuthoritySheet = ({ d }) => (
   </div>
 );
 
+/* =============== KYC AUTHORIZATION LETTER =============== */
+
+const KycAuthorizationSheet = ({ d }) => {
+  const documentOption = (field, label) => (
+    <div className={x.kycOption}>
+      <Tick on={d[field]} />
+      <span>{label}</span>
+    </div>
+  );
+
+  return (
+    <div className={x.kycWrap}>
+      <div className={x.kycTop}>
+        <div className={x.pre}>{d.toBlock}</div>
+        <div>Date: {d.date}</div>
+      </div>
+
+      <div className={x.kycSubject}>
+        Subject: Authorization with “Know Your Customer” (KYC) Documents
+      </div>
+
+      <p>
+        We hereby authorize <strong>{d.courierName || '________________'}</strong>{' '}
+        and their affiliates (together hereinafter “the said courier company”,
+        which expression shall include their respective holding companies and
+        their customs clearance agents), to:
+      </p>
+
+      <div className={`${x.kycText} ${x.pre}`}>
+        {d.authorizationText}
+      </div>
+
+      <p className={x.pre}>{d.validityText}</p>
+
+      <p className={x.pre}>{d.responsibilityText}</p>
+
+      <p>
+        We / I hereby enclose the following Know Your Customer (KYC)
+        documents, as applicable.
+      </p>
+
+      <table className={x.kycTable}>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Category</th>
+            <th>Documents Required / Enclosed</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr>
+            <td>1.</td>
+            <td>Individual</td>
+            <td>
+              <div className={x.kycTableNote}>
+                Any one of the following documents:
+              </div>
+
+              {documentOption(
+                'tick_passport',
+                'Passport copy with address page'
+              )}
+
+              {documentOption(
+                'tick_aadhaar',
+                'Aadhaar card copy'
+              )}
+
+              {documentOption(
+                'tick_individualPan',
+                'PAN card copy'
+              )}
+            </td>
+          </tr>
+
+          <tr>
+            <td>2.</td>
+            <td>
+              Firm, company, institution registered under GST laws
+            </td>
+            <td>
+              {documentOption(
+                'tick_gstin',
+                'GSTIN registration copy'
+              )}
+
+              {documentOption(
+                'tick_registeredIec',
+                `IEC number ${d.registeredIec || '_______________'} — copy`
+              )}
+            </td>
+          </tr>
+
+          <tr>
+            <td>3.</td>
+            <td>
+              Exempted / non-registered firms, companies, institutions
+              under GST laws
+            </td>
+            <td>
+              {documentOption(
+                'tick_nonRegisteredPan',
+                'PAN card copy'
+              )}
+
+              {documentOption(
+                'tick_nonRegisteredIec',
+                `IEC number ${d.nonRegisteredIec || '_______________'} — copy`
+              )}
+            </td>
+          </tr>
+
+          <tr>
+            <td>4.</td>
+            <td>
+              Embassy / U.N. bodies / Government entities
+            </td>
+            <td>
+              {documentOption(
+                'tick_uin',
+                'Unique Identification Number (UIN) copy'
+              )}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div className={`${x.kycFootnote} ${x.pre}`}>
+        {d.iecNote}
+      </div>
+
+      <p className={x.pre}>{d.verificationText}</p>
+
+      <div className={x.kycSignatureRow}>
+        <div>
+          <div>Name: {d.signatoryName}</div>
+
+          {d.designation && (
+            <div>Designation: {d.designation}</div>
+          )}
+
+          {d.companyName && (
+            <div>For: {d.companyName}</div>
+          )}
+        </div>
+
+        <div className={x.kycSignature}>
+          Sign / Stamp by Authorized Signatory
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 /* =============== FIELD LISTS (edit panel) =============== */
 const F = (k, label, o = {}) => ({ k, label, ...o });
@@ -833,6 +988,174 @@ const buildExportAuthorityDefaults = (data = {}) => {
   };
 };
 
+const kycAuthorizationFields = [
+  F('date', 'Date'),
+
+  F('toBlock', 'Addressee', {
+    rows: 4,
+    wide: true,
+  }),
+
+  F('courierName', 'Authorized courier company', {
+    wide: true,
+  }),
+
+  F('companyName', 'Company / shipper name', {
+    wide: true,
+  }),
+
+  F('signatoryName', 'Authorized signatory name'),
+  F('designation', 'Designation'),
+
+  F('registeredIec', 'IEC number — GST-registered entity'),
+  F('nonRegisteredIec', 'IEC number — exempt / non-registered entity'),
+
+  F('tick_passport', 'Individual: Passport copy', {
+    check: true,
+  }),
+
+  F('tick_aadhaar', 'Individual: Aadhaar copy', {
+    check: true,
+  }),
+
+  F('tick_individualPan', 'Individual: PAN copy', {
+    check: true,
+  }),
+
+  F('tick_gstin', 'GST-registered entity: GSTIN copy', {
+    check: true,
+  }),
+
+  F('tick_registeredIec', 'GST-registered entity: IEC copy', {
+    check: true,
+  }),
+
+  F('tick_nonRegisteredPan', 'Non-registered entity: PAN copy', {
+    check: true,
+  }),
+
+  F('tick_nonRegisteredIec', 'Non-registered entity: IEC copy', {
+    check: true,
+  }),
+
+  F('tick_uin', 'Embassy / Government entity: UIN copy', {
+    check: true,
+  }),
+
+  F('authorizationText', 'Authorization clauses', {
+    rows: 12,
+    wide: true,
+  }),
+
+  F('validityText', 'Authorization validity', {
+    rows: 5,
+    wide: true,
+  }),
+
+  F('responsibilityText', 'Responsibility undertaking', {
+    rows: 5,
+    wide: true,
+  }),
+
+  F('iecNote', 'IEC / address-matching note', {
+    rows: 3,
+    wide: true,
+  }),
+
+  F('verificationText', 'KYC verification declaration', {
+    rows: 3,
+    wide: true,
+  }),
+];
+
+const buildKycAuthorizationDefaults = (data = {}) => {
+  const consignor = data.consignorDetails || {};
+  const packing = buildPackingListDefaults(data) || {};
+
+  return {
+    date: extraDocDate(data.invoiceDate),
+
+    toBlock:
+      'To,\n' +
+      'The Deputy Commissioner of Customs\n' +
+      'Courier Cell Sahar,\n' +
+      'Mumbai 400 099',
+
+    // Blank because the attached template does not specify a courier.
+    courierName: '',
+
+    companyName: consignor.company || packing.exporterName || '',
+    signatoryName: '',
+    designation: '',
+
+    registeredIec: packing.iec || '',
+    nonRegisteredIec: packing.iec || '',
+
+    // Do not assume any KYC documents are actually enclosed.
+    tick_passport: false,
+    tick_aadhaar: false,
+    tick_individualPan: false,
+    tick_gstin: false,
+    tick_registeredIec: false,
+    tick_nonRegisteredPan: false,
+    tick_nonRegisteredIec: false,
+    tick_uin: false,
+
+    authorizationText:
+      '1) Act as our authorized courier and/or agent to do all necessary ' +
+      'acts on our behalf for customs clearance, including filing of ' +
+      'documents, declarations and Bills of Entry / Shipping Bills for ' +
+      'clearance of all import and export shipments consigned to or by ' +
+      'us from time to time through the courier, express or formal ' +
+      'customs clearance mode.\n\n' +
+
+      '2) File documents for import or export customs clearance of ' +
+      'shipments based on the declaration and information regarding ' +
+      'the shipments provided to the said courier company by us or, ' +
+      'in the absence of the same, the information for import shipments ' +
+      'provided to the said courier company by the consignors for ' +
+      'delivery in India.\n\n' +
+
+      'a) Act in the capacity of transporter of goods and generate ' +
+      'E-Way Bill 01 Part A as per allowed provisions of E-Way Bill ' +
+      'Rules for shipments of landed value greater than INR 50,000.\n\n' +
+
+      'i) Part A comprising details of GSTIN of recipient, place of ' +
+      'delivery (PIN Code), invoice or challan number and date, value ' +
+      'of goods, HSN code, transport document number (Airway Bill ' +
+      'Number) and reasons for transportation.\n\n' +
+
+      'ii) Part B comprising transporter details (vehicle number).',
+
+    validityText:
+      'This authorization shall remain valid until revoked in writing ' +
+      'and acknowledged by the said courier company in writing and ' +
+      'shall cover all our shipments sent by or addressed to our ' +
+      'various offices / branches in India. This authorization may be ' +
+      'produced and presented before any customs station in India as ' +
+      'a formal authorization to your company for customs clearance ' +
+      'of our shipments by you or your authorized agents.',
+
+    responsibilityText:
+      'We / I undertake to pay all demands of differential duties and ' +
+      'penalties subsequently made by the customs authorities as a ' +
+      'sequel to these transactions. We further undertake that we are ' +
+      'directly responsible if anything is found contrary / objectionable ' +
+      'under the Customs Act, 1962, or any other law for the time being ' +
+      'in force, in relation to our declaration made by the said courier ' +
+      'company at the time of clearing our consignment.',
+
+    iecNote:
+      'IEC number is mandatory to file shipment for clearance. The ' +
+      'name / branch address of the company as on the invoice should ' +
+      'match that on the shipping documents accompanying the shipment.',
+
+    verificationText:
+      'We / I duly declare that the above documents are true copies ' +
+      'and verifiable with the original KYC documents if called upon ' +
+      'by customs / government authorities.',
+  };
+};
 
 /* =============== REGISTRY =============== */
 export const EXTRA_DOCS = [
@@ -903,6 +1226,20 @@ export const EXTRA_DOCS = [
     margins: { top: 20, bottom: 20 },
     letterhead: true,
   },
+
+
+    {
+    id: 'kyc_authorization',
+    label: 'KYC Authorization Letter',
+    file: 'KYC-Authorization-Letter',
+    build: buildKycAuthorizationDefaults,
+    fields: kycAuthorizationFields,
+    Sheet: KycAuthorizationSheet,
+    side: 15,
+    margins: { top: 15, bottom: 15 },
+    letterhead: false,
+  },
+
 
   // --- MODE DOCUMENTS (medicine, electronics) ---
   ...MODE_DOCS,
