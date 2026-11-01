@@ -51,6 +51,16 @@ const navGroups = [
     ],
   },
   {
+  label: 'Courier reporting',
+  items: [
+    {
+      label: 'DTDC MIS',
+      icon: 'files',
+      href: '/dtdc-mis',
+    },
+  ],
+},
+  {
     label: 'Workspace',
     items: [
       {
