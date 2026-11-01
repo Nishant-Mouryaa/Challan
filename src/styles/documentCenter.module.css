@@ -5,8 +5,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  z-index: var(--zindex-modal, 1050);
-
+z-index: 10000;
   display: grid;
   place-items: center;
 

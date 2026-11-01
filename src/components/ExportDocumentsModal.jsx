@@ -1722,6 +1722,7 @@ const ExportDocumentsModal = ({
   );
 
   return createPortal(modal, document.body);
+  
 };
 
 export default ExportDocumentsModal;

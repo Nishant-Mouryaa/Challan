@@ -1,195 +1,346 @@
 import React from 'react';
-import styles from '../styles/form.module.css';
+
+import s from '../styles/invoiceWorkspace.module.css';
+
 import { getMode } from '../data/invoiceModes';
 import HsnCodeLookup from './HsnCodeLookup';
 
-const InternationalInvoiceItems = ({ items, onItemChange, onAddItem, onRemoveItem, modeId }) => {
-  const mode = getMode(modeId);
+const numberValue = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
 
-  const calculateAmount = (qty, rate) =>
-    (qty * rate).toLocaleString('en-IN', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
+const formatAmount = (quantity, rate) =>
+  (
+    numberValue(quantity) * numberValue(rate)
+  ).toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+const InternationalInvoiceItems = ({
+  items = [],
+  onItemChange,
+  onAddItem,
+  onRemoveItem,
+  modeId,
+  currencyCode,
+  disabled = false,
+}) => {
+  const mode = getMode(modeId);
+  const itemFields = mode?.itemFields || [];
 
   return (
-    <div>
-      <h3>Invoice Items</h3>
+    <div className={s.items}>
+      <div className={s.itemsToolbar}>
+        <div>
+          <strong>
+            {items.length} line item{items.length === 1 ? '' : 's'}
+          </strong>
 
-      <div className={styles.itemsTableWrapper}>
-        <table className={styles.itemsTable}>
-          <thead>
-            <tr>
-              <th style={{ width: '5%' }}>S.No</th>
-              <th className={styles.quantityColumn} style={{ width: '9%' }}>
-                Quantity
-              </th>
-              <th className={styles.hsnColumn} style={{ width: '18%' }}>
-                HSN Code
-              </th>
-              <th style={{ width: '6%' }}>Box</th>
-              <th style={{ width: '20%' }}>Description of Goods</th>
-              <th style={{ width: '11%' }}>Rate/Piece</th>
-              <th style={{ width: '11%' }}>Amount</th>
-              <th style={{ width: '12%' }}>Weight Info</th>
-              <th style={{ width: '8%' }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item, index) => (
-              <tr key={index}>
-                <td style={{ textAlign: 'center' }}>{index + 1}</td>
+          <p>
+            Items with the same box number are grouped on the invoice.
+          </p>
+        </div>
 
-                <td className={styles.quantityColumn}>
-                  <input
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={(e) =>
-                      onItemChange(index, { quantity: parseInt(e.target.value) || 0 })
+        <button
+          type="button"
+          className={`${s.button} ${s.secondaryButton}`}
+          onClick={onAddItem}
+          disabled={disabled}
+        >
+          + Add item
+        </button>
+      </div>
+
+      <div className={s.itemCards}>
+        {items.map((item, index) => {
+          const prefix = `invoice-item-${index}`;
+
+          const change = (key, value) =>
+            onItemChange(index, { [key]: value });
+
+          return (
+            <article
+              key={item.id ?? index}
+              className={s.itemCard}
+              aria-labelledby={`${prefix}-heading`}
+            >
+              <header className={s.itemHeader}>
+                <div className={s.itemIdentity}>
+                  <span className={s.itemNumber}>
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+
+                  <div>
+                    <h3 id={`${prefix}-heading`}>
+                      Item {index + 1}
+                    </h3>
+
+                    <span>
+                      {item.hsnCode
+                        ? `HSN ${item.hsnCode}`
+                        : 'Add product and pricing details'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className={s.itemHeaderActions}>
+                  <div className={s.itemAmount}>
+                    <span>Amount</span>
+
+                    <strong>
+                      {currencyCode || ''}{' '}
+                      {formatAmount(
+                        item.quantity,
+                        item.ratePerPiece
+                      )}
+                    </strong>
+                  </div>
+
+                  <button
+                    type="button"
+                    className={s.removeButton}
+                    disabled={disabled || items.length <= 1}
+                    onClick={() => onRemoveItem(index)}
+                    aria-label={`Remove item ${index + 1}`}
+                    title={
+                      items.length <= 1
+                        ? 'Keep at least one line item'
+                        : `Remove item ${index + 1}`
                     }
-                    aria-label={`Quantity for item ${index + 1}`}
-                    className={`${styles.itemInput} ${styles.quantityInput}`}
-                  />
-                </td>
+                  >
+                    Remove
+                  </button>
+                </div>
+              </header>
 
-                <td className={styles.hsnColumn}>
-                  <HsnCodeLookup
-                    itemIndex={index}
-                    onSelect={(match) =>
-                      onItemChange(index, {
-                        hsnCode: match.code,
-                        description: match.description,
-                      })
-                    }
-                  />
-                  <input
-                    type="text"
-                    value={item.hsnCode || ''}
-                    onChange={(e) => onItemChange(index, { hsnCode: e.target.value })}
-                    placeholder="HSN"
-                    aria-label={`HSN code for item ${index + 1}`}
-                    className={styles.itemInput}
-                  />
-                </td>
+              <div className={s.itemBody}>
+                <div className={s.itemMainGrid}>
+                  <div className={s.field}>
+                    <label htmlFor={`${prefix}-description`}>
+                      Description of goods
+                    </label>
 
-                {/* Box no: items with the same box are grouped on the invoice */}
-                <td>
-                  <input
-                    type="text"
-                    value={item.boxNo || ''}
-                    onChange={(e) => onItemChange(index, { boxNo: e.target.value })}
-                    placeholder="1"
-                    className={styles.itemInput}
-                  />
-                </td>
+                    <textarea
+                      id={`${prefix}-description`}
+                      value={item.description || ''}
+                      onChange={(event) =>
+                        change('description', event.target.value)
+                      }
+                      placeholder="Product name and full description"
+                      rows={3}
+                      disabled={disabled}
+                    />
+                  </div>
 
-                <td>
-                  <textarea
-                    value={item.description || ''}
-                    onChange={(e) => onItemChange(index, { description: e.target.value })}
-                    placeholder="Product description"
-                    className={styles.itemInput}
-                    style={{ minHeight: '40px', resize: 'vertical' }}
-                  />
+                  <div className={s.hsnPanel}>
+                    <HsnCodeLookup
+                      itemIndex={index}
+                      disabled={disabled}
+                      onSelect={(match) =>
+                        onItemChange(index, {
+                          hsnCode: match.code,
+                          description: match.description,
+                        })
+                      }
+                    />
 
-                  {/* Mode-specific fields (medicine: batch/expiry, electronics: model/serial) */}
-                  {mode.itemFields.length > 0 && (
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 1fr',
-                        gap: '4px',
-                        marginTop: '4px',
-                      }}
-                    >
-                      {mode.itemFields.map((f) => (
-                        <input
-                          key={f.k}
-                          type="text"
-                          value={item[f.k] || ''}
-                          onChange={(e) => onItemChange(index, { [f.k]: e.target.value })}
-                          placeholder={f.placeholder}
-                          aria-label={f.label}
-                          title={f.label}
-                          className={styles.itemInput}
-                          style={{
-                            fontSize: '0.85rem',
-                            gridColumn: f.k === 'strength' ? '1 / -1' : 'auto',
-                          }}
-                        />
+                    <div className={s.field}>
+                      <label htmlFor={`${prefix}-hsn`}>
+                        HSN code
+                      </label>
+
+                      <input
+                        id={`${prefix}-hsn`}
+                        type="text"
+                        value={item.hsnCode || ''}
+                        onChange={(event) =>
+                          change('hsnCode', event.target.value)
+                        }
+                        placeholder="Enter or search above"
+                        disabled={disabled}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className={s.gridThree}>
+                  <div className={s.field}>
+                    <label htmlFor={`${prefix}-quantity`}>
+                      Quantity
+                    </label>
+
+                    <input
+                      id={`${prefix}-quantity`}
+                      type="number"
+                      min="1"
+                      step="1"
+                      required
+                      value={item.quantity ?? ''}
+                      onChange={(event) =>
+                        change(
+                          'quantity',
+                          event.target.value === ''
+                            ? ''
+                            : Number(event.target.value)
+                        )
+                      }
+                      disabled={disabled}
+                    />
+                  </div>
+
+                  <div className={s.field}>
+                    <label htmlFor={`${prefix}-rate`}>
+                      Rate per piece
+                      {currencyCode ? ` (${currencyCode})` : ''}
+                    </label>
+
+                    <input
+                      id={`${prefix}-rate`}
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      required
+                      value={item.ratePerPiece ?? ''}
+                      onChange={(event) =>
+                        change(
+                          'ratePerPiece',
+                          event.target.value === ''
+                            ? ''
+                            : Number(event.target.value)
+                        )
+                      }
+                      placeholder="0.00"
+                      disabled={disabled}
+                    />
+                  </div>
+
+                  <div className={s.field}>
+                    <label htmlFor={`${prefix}-box`}>
+                      Box number
+                    </label>
+
+                    <input
+                      id={`${prefix}-box`}
+                      type="text"
+                      value={item.boxNo || ''}
+                      onChange={(event) =>
+                        change('boxNo', event.target.value)
+                      }
+                      placeholder="e.g. 1"
+                      disabled={disabled}
+                    />
+                  </div>
+                </div>
+
+                {itemFields.length > 0 && (
+                  <div className={s.itemSubsection}>
+                    <h4>Additional product details</h4>
+
+                    <div className={s.gridTwo}>
+                      {itemFields.map((field) => (
+                        <div
+                          key={field.k}
+                          className={`${s.field} ${
+                            field.k === 'strength'
+                              ? s.fullWidth
+                              : ''
+                          }`}
+                        >
+                          <label
+                            htmlFor={`${prefix}-${field.k}`}
+                          >
+                            {field.label}
+                          </label>
+
+                          <input
+                            id={`${prefix}-${field.k}`}
+                            type="text"
+                            value={item[field.k] || ''}
+                            onChange={(event) =>
+                              change(field.k, event.target.value)
+                            }
+                            placeholder={field.placeholder}
+                            disabled={disabled}
+                          />
+                        </div>
                       ))}
                     </div>
-                  )}
-                </td>
+                  </div>
+                )}
 
-                <td>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={item.ratePerPiece}
-                    onChange={(e) =>
-                      onItemChange(index, { ratePerPiece: parseFloat(e.target.value) || 0 })
-                    }
-                    placeholder="Rate"
-                    className={styles.itemInput}
-                  />
-                </td>
-                <td style={{ textAlign: 'right' }}>
-                  {calculateAmount(item.quantity, item.ratePerPiece)}
-                </td>
-                <td>
-                  <input
-                    type="text"
-                    value={item.returnOrder || ''}
-                    onChange={(e) => onItemChange(index, { returnOrder: e.target.value })}
-                    placeholder="Return order #"
-                    className={styles.itemInput}
-                    style={{ fontSize: '0.85rem', marginBottom: '4px' }}
-                  />
-                  <input
-                    type="text"
-                    value={item.actualWeight || ''}
-                    onChange={(e) => onItemChange(index, { actualWeight: e.target.value })}
-                    placeholder="Actual weight (kg)"
-                    className={styles.itemInput}
-                    style={{ fontSize: '0.85rem', marginBottom: '4px' }}
-                  />
-                  <input
-                    type="text"
-                    value={item.volWeight || ''}
-                    onChange={(e) => onItemChange(index, { volWeight: e.target.value })}
-                    placeholder="53 x 44 x 19"
-                    className={styles.itemInput}
-                    style={{ fontSize: '0.85rem' }}
-                  />
-                </td>
-                <td>
-                  {items.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => onRemoveItem(index)}
-                      className="btn btn-danger"
-                      style={{ width: '100%', padding: '0.4rem' }}
-                    >
-                      Remove
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                <details className={s.itemDetails}>
+                  <summary>
+                    Weight information & return reference
+                  </summary>
+
+                  <div className={s.gridThree}>
+                    <div className={s.field}>
+                      <label htmlFor={`${prefix}-return`}>
+                        Return order reference
+                      </label>
+
+                      <input
+                        id={`${prefix}-return`}
+                        type="text"
+                        value={item.returnOrder || ''}
+                        onChange={(event) =>
+                          change('returnOrder', event.target.value)
+                        }
+                        placeholder="Return order number"
+                        disabled={disabled}
+                      />
+                    </div>
+
+                    <div className={s.field}>
+                      <label htmlFor={`${prefix}-weight`}>
+                        Actual weight (KG)
+                      </label>
+
+                      <input
+                        id={`${prefix}-weight`}
+                        type="text"
+                        value={item.actualWeight || ''}
+                        onChange={(event) =>
+                          change('actualWeight', event.target.value)
+                        }
+                        placeholder="e.g. 2.50"
+                        disabled={disabled}
+                      />
+                    </div>
+
+                    <div className={s.field}>
+                      <label htmlFor={`${prefix}-volume`}>
+                        Dimensions / volumetric information
+                      </label>
+
+                      <input
+                        id={`${prefix}-volume`}
+                        type="text"
+                        value={item.volWeight || ''}
+                        onChange={(event) =>
+                          change('volWeight', event.target.value)
+                        }
+                        placeholder="53 × 44 × 19"
+                        disabled={disabled}
+                      />
+                    </div>
+                  </div>
+                </details>
+              </div>
+            </article>
+          );
+        })}
       </div>
 
       <button
         type="button"
+        className={s.addItemButton}
         onClick={onAddItem}
-        className="btn btn-secondary"
-        style={{ marginTop: '1rem' }}
+        disabled={disabled}
       >
-        + Add Item
+        + Add another line item
       </button>
     </div>
   );

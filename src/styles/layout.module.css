@@ -764,3 +764,212 @@ a.actionRow:hover .actionCta {
     max-width: none;
   }
 }
+
+/* =========================================================
+   SIDEBAR VISUAL REFINEMENTS
+
+   Preserve the existing sidebar layout and responsive rules.
+   These overrides affect appearance only.
+   ========================================================= */
+
+.sidebarPolished {
+  background: #fff;
+
+  border-right: 1px solid var(--color-border-light, #e7eaee);
+
+  box-shadow: 1px 0 0 rgba(16, 24, 40, 0.015);
+}
+
+.sidebarPolished .sidebarHeader {
+  min-height: 88px;
+
+  border-bottom: 1px solid var(--color-border-light, #e7eaee);
+}
+
+.sidebarPolished .brand {
+  min-width: 0;
+
+  color: var(--color-text-primary, #1b1f27);
+
+  text-decoration: none;
+}
+
+.sidebarPolished .brandMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 38px;
+  height: 38px;
+
+  flex-shrink: 0;
+
+  color: #fff;
+  background: var(--color-red-primary, #c41e3a);
+
+  border: 1px solid var(--color-red-primary, #c41e3a);
+  border-radius: 10px;
+
+  box-shadow: 0 3px 8px rgba(196, 30, 58, 0.13);
+}
+
+.sidebarPolished .brandName {
+  color: var(--color-text-primary, #1b1f27);
+
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+}
+
+.sidebarPolished .brandSub {
+  color: var(--color-text-tertiary, #8c94a0);
+
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.sidebarPolished .sidebarNav {
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+
+.sidebarPolished .navGroup + .navGroup {
+  margin-top: 23px;
+}
+
+.sidebarPolished .navLabel {
+  margin-bottom: 8px;
+
+  color: var(--color-text-tertiary, #8c94a0);
+
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.09em;
+
+  text-transform: uppercase;
+}
+
+.sidebarPolished .navItem {
+  position: relative;
+
+  min-height: 43px;
+  margin-bottom: 5px;
+
+  color: var(--color-text-secondary, #5a6270);
+  background: transparent;
+
+  border: 1px solid transparent;
+  border-radius: 8px;
+
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+
+  text-decoration: none;
+
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
+}
+
+.sidebarPolished .navItem:hover {
+  color: var(--color-text-primary, #1b1f27);
+  background: var(--color-gray-50, #f8f9fa);
+}
+
+.sidebarPolished .navItemActive,
+.sidebarPolished .navItemActive:hover {
+  color: var(--color-red-dark, #a01830);
+  background: var(--color-red-pale, #fcedef);
+
+  border-color: #f3d9de;
+
+  font-weight: 650;
+}
+
+.sidebarPolished .navIcon {
+  flex-shrink: 0;
+  color: var(--color-text-tertiary, #8c94a0);
+}
+
+.sidebarPolished .navItem:hover .navIcon {
+  color: var(--color-text-secondary, #5a6270);
+}
+
+.sidebarPolished .navItemActive .navIcon,
+.sidebarPolished .navItemActive:hover .navIcon {
+  color: var(--color-red-primary, #c41e3a);
+}
+
+.sidebarPolished .collapseSidebarBtn,
+.sidebarPolished .closeMobileBtn {
+  color: var(--color-text-secondary, #5a6270);
+  background: #fff;
+
+  border: 1px solid var(--color-border-light, #e7eaee);
+  border-radius: 7px;
+
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.sidebarPolished .collapseSidebarBtn:hover,
+.sidebarPolished .closeMobileBtn:hover {
+  color: var(--color-text-primary, #1b1f27);
+  background: var(--color-gray-100, #f1f3f5);
+}
+
+.sidebarPolished .sidebarFooter {
+  border-top: 1px solid var(--color-border-light, #e7eaee);
+}
+
+.sidebarPolished .footerLink {
+  gap: 9px;
+
+  color: var(--color-text-secondary, #5a6270);
+  background: transparent;
+
+  border: 1px solid transparent;
+  border-radius: 7px;
+
+  font-size: 11px;
+
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.sidebarPolished .footerLink:hover {
+  color: var(--color-red-primary, #c41e3a);
+  background: var(--color-red-pale, #fcedef);
+}
+
+.sidebarPolished .version {
+  color: var(--color-text-tertiary, #8c94a0);
+
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+
+.sidebarPolished .brand:focus-visible,
+.sidebarPolished .navItem:focus-visible,
+.sidebarPolished .collapseSidebarBtn:focus-visible,
+.sidebarPolished .closeMobileBtn:focus-visible,
+.sidebarPolished .footerLink:focus-visible {
+  outline: 2px solid var(--color-red-primary, #c41e3a);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebarPolished .navItem,
+  .sidebarPolished .collapseSidebarBtn,
+  .sidebarPolished .closeMobileBtn,
+  .sidebarPolished .footerLink {
+    transition: none;
+  }
+}

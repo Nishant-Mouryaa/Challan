@@ -1,17 +1,120 @@
-import React, { useState } from 'react';
-import styles from '../styles/form.module.css';
+import React, { useRef, useState } from 'react';
+import Link from 'next/link';
+
+import s from '../styles/invoiceWorkspace.module.css';
+
 import InternationalInvoiceItems from './InternationalInvoiceItems';
 import InternationalInvoicePreview from './InternationalInvoicePreview';
-import { useInternationalInvoice } from '../hooks/useInternationalInvoice';
 import ExportDocumentsModal from './ExportDocumentsModal';
+
 import InvoiceModeSelector from './InvoiceModeSelector';
 import ModeDetails from './ModeDetails';
-import { getMode } from '../data/invoiceModes';
 import InternationalPartySelectors from './InternationalPartySelectors';
+
+import { useInternationalInvoice } from '../hooks/useInternationalInvoice';
+import { getMode } from '../data/invoiceModes';
+
+/* =========================================================
+   REUSABLE FIELD
+   ========================================================= */
+
+const InputField = ({
+  id,
+  label,
+  value,
+  onChange,
+  type = 'text',
+  required = false,
+  placeholder,
+  wide = false,
+  multiline = false,
+  hint,
+  ...inputProps
+}) => {
+  const hintId = hint ? `${id}-hint` : undefined;
+
+  return (
+    <div className={`${s.field} ${wide ? s.fullWidth : ''}`}>
+      <label htmlFor={id}>
+        {label}
+        {required && <span className={s.required}> *</span>}
+      </label>
+
+      {multiline ? (
+        <textarea
+          {...inputProps}
+          id={id}
+          value={value ?? ''}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          required={required}
+          aria-describedby={hintId}
+          rows={inputProps.rows || 3}
+        />
+      ) : (
+        <input
+          {...inputProps}
+          id={id}
+          type={type}
+          value={value ?? ''}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          required={required}
+          aria-describedby={hintId}
+        />
+      )}
+
+      {hint && (
+        <span id={hintId} className={s.fieldHint}>
+          {hint}
+        </span>
+      )}
+    </div>
+  );
+};
+
+/* =========================================================
+   NUMBERED SECTION
+   ========================================================= */
+
+const FormSection = ({
+  id,
+  number,
+  title,
+  description,
+  children,
+}) => (
+  <section id={id} className={s.card}>
+    <div className={s.cardHeader}>
+      <span className={s.sectionNumber} aria-hidden="true">
+        {number}
+      </span>
+
+      <div>
+        <h2>{title}</h2>
+        {description && <p>{description}</p>}
+      </div>
+    </div>
+
+    <div className={s.cardBody}>{children}</div>
+  </section>
+);
+
+const SECTION_LINKS = [
+  ['invoice-details', 'Invoice'],
+  ['sender-details', 'Sender'],
+  ['receiver-details', 'Recipient'],
+  ['shipping-details', 'Shipping'],
+  ['invoice-items', 'Items'],
+];
+
+/* =========================================================
+   FORM
+   ========================================================= */
 
 const InternationalInvoiceForm = () => {
   const {
-    invoiceData,              // <- comes from the hook again
+    invoiceData,
     updateInvoiceData,
     updateConsignorDetails,
     updateConsigneeDetails,
@@ -26,519 +129,621 @@ const InternationalInvoiceForm = () => {
     getAmountInWords,
   } = useInternationalInvoice();
 
+  const formRef = useRef(null);
+  const savingRef = useRef(false);
+
   const [showPreview, setShowPreview] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [showDocs, setShowDocs] = useState(false);
   const [loading, setLoading] = useState(false);
-const [showDocs, setShowDocs] = useState(false);
+  const [message, setMessage] = useState(null);
+
   const mode = getMode(invoiceData.mode);
 
-  const handleSave = async () => {
+  const consignor = invoiceData.consignorDetails || {};
+  const consignee = invoiceData.consigneeDetails || {};
+
+  const items = invoiceData.items || [];
+
+  const calculatedTotal = Number(getTotalAmount());
+  const total = Number.isFinite(calculatedTotal)
+    ? calculatedTotal
+    : 0;
+
+  const amountInWords = String(
+    getAmountInWords(total) || ''
+  ).toUpperCase();
+
+  const currency = invoiceData.currencyCode || '—';
+
+  const idType = consignor.idType || 'gstin';
+
+  const canPreview = Boolean(
+    invoiceData.invoiceNo && consignee.name
+  );
+
+  const updateRoot = (key) => (value) =>
+    updateInvoiceData({ [key]: value });
+
+  const updateSender = (key) => (value) =>
+    updateConsignorDetails({ [key]: value });
+
+  const updateReceiver = (key) => (value) =>
+    updateConsigneeDetails({ [key]: value });
+
+  const rootField = (key, label, options = {}) => (
+    <InputField
+      key={key}
+      id={`invoice-${key}`}
+      label={label}
+      value={invoiceData[key]}
+      onChange={updateRoot(key)}
+      {...options}
+    />
+  );
+
+  const senderField = (key, label, options = {}) => (
+    <InputField
+      key={key}
+      id={`sender-${key}`}
+      label={label}
+      value={consignor[key]}
+      onChange={updateSender(key)}
+      {...options}
+    />
+  );
+
+  const receiverField = (key, label, options = {}) => (
+    <InputField
+      key={key}
+      id={`receiver-${key}`}
+      label={label}
+      value={consignee[key]}
+      onChange={updateReceiver(key)}
+      {...options}
+    />
+  );
+
+  const handleSave = async (event) => {
+    event.preventDefault();
+
+    if (savingRef.current) return;
+
+    if (!formRef.current?.reportValidity()) return;
+
+    savingRef.current = true;
     setLoading(true);
+    setMessage(null);
+
     try {
       await saveInvoice();
-      setSuccessMessage('Invoice saved successfully!');
-      setTimeout(() => {
-        setSuccessMessage('');
-        resetForm();
-      }, 3000);
+
+      setMessage({
+        type: 'success',
+        text:
+          'Invoice saved successfully. You can continue reviewing it ' +
+          'or use Reset to start a new invoice.',
+      });
     } catch (error) {
       console.error('Error saving invoice:', error);
-      setSuccessMessage(error.message || 'Error saving invoice. Please try again.');
+
+      setMessage({
+        type: 'error',
+        text:
+          error instanceof Error
+            ? error.message
+            : 'Could not save the invoice. Please try again.',
+      });
     } finally {
+      savingRef.current = false;
       setLoading(false);
     }
   };
 
-  return (
-    <div className={styles.formContainer}>
-      <div className={styles.formHeader}>
-        <h1>Create International Invoice</h1>
-        <p>Generate international export invoices</p>
-      </div>
+  const handleReset = () => {
+    if (
+      !window.confirm(
+        'Reset this form? Any changes not saved to an invoice will be lost.'
+      )
+    ) {
+      return;
+    }
 
-      {successMessage && (
-        <div className={successMessage.includes('Error') ? styles.error : styles.success}>
-          {successMessage}
+    resetForm();
+    setMessage(null);
+    setShowPreview(false);
+    setShowDocs(false);
+  };
+
+  return (
+    <div className={s.page}>
+      {/* ================= PAGE HEADER ================= */}
+
+      <header className={s.pageHeader}>
+        <div>
+          <div className={s.eyebrow}>INTERNATIONAL SHIPPING</div>
+
+          <h1>Create export invoice</h1>
+
+          <p>
+            Add shipment details, prepare your invoice, and generate
+            supporting documents.
+          </p>
+        </div>
+
+        <Link
+          href="/view-international-invoices"
+          className={`${s.button} ${s.secondaryButton}`}
+        >
+          View all invoices
+        </Link>
+      </header>
+
+      {message && (
+        <div
+          className={`${s.alert} ${
+            message.type === 'error'
+              ? s.errorAlert
+              : s.successAlert
+          }`}
+          role={message.type === 'error' ? 'alert' : 'status'}
+        >
+          <span>{message.text}</span>
+
+          <button
+            type="button"
+            onClick={() => setMessage(null)}
+            aria-label="Dismiss message"
+            className={s.dismissButton}
+          >
+            ×
+          </button>
         </div>
       )}
-<InvoiceModeSelector value={invoiceData.mode} onChange={applyMode} />
-      <ModeDetails
-        mode={invoiceData.mode}
-        details={invoiceData.modeDetails}
-        onChange={updateModeDetails}
-      />
-      {/* Invoice Details */}
-      <fieldset className={styles.fieldset}>
-        <legend className={styles.legend}>Invoice Details</legend>
-        <div className={styles.formRow}>
-          <div className={styles.formControl}>
-            <label>Invoice Number *</label>
-            <input
-              type="text"
-              value={invoiceData.invoiceNo}
-              onChange={(e) => updateInvoiceData({ invoiceNo: e.target.value })}
-              placeholder="e.g., 61056923/25-26"
-              className={styles.formControl}
-              required
-            />
-          </div>
-          <div className={styles.formControl}>
-            <label>Invoice Date *</label>
-            <input
-              type="date"
-              value={invoiceData.invoiceDate}
-              onChange={(e) => updateInvoiceData({ invoiceDate: e.target.value })}
-              className={styles.formControl}
-              required
-            />
-          </div>
-          <div className={styles.formControl}>
-            <label>Currency Code</label>
-            <input
-              type="text"
-              value={invoiceData.currencyCode}
-onChange={(e) =>
-  updateInvoiceData({ currencyCode: e.target.value.toUpperCase(), currencyName: '' })
-}              placeholder="USD, EUR, INR, etc."
-              className={styles.formControl}
-              maxLength="3"
-            />
-          </div>
-          
-        </div>
 
-        <div className={styles.formRow}>
-          <div className={styles.formControl}>
-            <label>Buyer's Order No</label>
-            <input
-              type="text"
-              value={invoiceData.buyersOrderNo}
-              onChange={(e) => updateInvoiceData({ buyersOrderNo: e.target.value })}
-              placeholder="Order number"
-              className={styles.formControl}
-            />
-          </div>
-          <div className={styles.formControl}>
-            <label>Other Reference</label>
-            <input
-              type="text"
-              value={invoiceData.otherRef}
-              onChange={(e) => updateInvoiceData({ otherRef: e.target.value })}
-              placeholder="Reference information"
-              className={styles.formControl}
-            />
-          </div>
-        </div>
-      </fieldset>
-
-      {/* Consignor Details */}
-      <fieldset className={styles.fieldset}>
-        <legend className={styles.legend}>Consignor Details</legend>
-        <InternationalPartySelectors
-          invoiceData={invoiceData}
-          updateInvoiceData={updateInvoiceData}
-          updateConsignorDetails={updateConsignorDetails}
-          updateConsigneeDetails={updateConsigneeDetails}
-          showSender
-        />
-
-        <div className={styles.formRow}>
-          <div className={styles.formControl}>
-            <label>Company Name</label>
-            <input
-              type="text"
-              value={invoiceData.consignorDetails.company}
-              onChange={(e) => updateConsignorDetails({ company: e.target.value })}
-              className={styles.formControl}
-            />
-          </div>
-        </div>
-
-        <div className={styles.formControl}>
-          <label>Address Line 1</label>
-          <input
-            type="text"
-            value={invoiceData.consignorDetails.address}
-            onChange={(e) => updateConsignorDetails({ address: e.target.value })}
-            className={styles.formControl}
-          />
-        </div>
-
-        <div className={styles.formControl}>
-          <label>Building Name</label>
-          <input
-            type="text"
-            value={invoiceData.consignorDetails.building}
-            onChange={(e) => updateConsignorDetails({ building: e.target.value })}
-            className={styles.formControl}
-          />
-        </div>
-
-        <div className={styles.formRow}>
-          <div className={styles.formControl}>
-            <label>Area</label>
-            <input
-              type="text"
-              value={invoiceData.consignorDetails.area}
-              onChange={(e) => updateConsignorDetails({ area: e.target.value })}
-              className={styles.formControl}
-            />
-          </div>
-          <div className={styles.formControl}>
-            <label>City</label>
-            <input
-              type="text"
-              value={invoiceData.consignorDetails.city}
-              onChange={(e) => updateConsignorDetails({ city: e.target.value })}
-              className={styles.formControl}
-            />
-          </div>
-          <div className={styles.formControl}>
-            <label>Phone</label>
-            <input
-              type="tel"
-              value={invoiceData.consignorDetails.phone}
-              onChange={(e) => updateConsignorDetails({ phone: e.target.value })}
-              className={styles.formControl}
-            />
-          </div>
-        </div>
-<div className={styles.formRow}>
-  <div className={styles.formControl}>
-    <label>ID Proof Type</label>
-    <div style={{ display: 'flex', gap: '1.5rem', paddingTop: '0.65rem' }}>
-      <label
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.4rem',
-          cursor: 'pointer',
-          fontWeight: 'normal',
-        }}
+      <form
+        ref={formRef}
+        onSubmit={handleSave}
+        noValidate
+        aria-busy={loading}
       >
-        <input
-          type="radio"
-          name="consignorIdType"
-          value="gstin"
-          checked={(invoiceData.consignorDetails.idType || 'gstin') === 'gstin'}
-          onChange={() => updateConsignorDetails({ idType: 'gstin' })}
-        />
-        GSTIN
-      </label>
-      <label
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.4rem',
-          cursor: 'pointer',
-          fontWeight: 'normal',
-        }}
-      >
-        <input
-          type="radio"
-          name="consignorIdType"
-          value="aadhaar"
-          checked={invoiceData.consignorDetails.idType === 'aadhaar'}
-          onChange={() => updateConsignorDetails({ idType: 'aadhaar' })}
-        />
-        Aadhaar Card No.
-      </label>
-    </div>
-  </div>
+        <div className={s.workspace}>
+          <div className={s.formColumn}>
+            {/* Navigation between sections */}
+            <nav
+              className={s.sectionNav}
+              aria-label="Invoice sections"
+            >
+              {SECTION_LINKS.map(([id, label], index) => (
+                <a key={id} href={`#${id}`}>
+                  <span>{index + 1}</span>
+                  {label}
+                </a>
+              ))}
+            </nav>
 
-  <div className={styles.formControl}>
-    <label>
-      {(invoiceData.consignorDetails.idType || 'gstin') === 'gstin'
-        ? 'GSTIN'
-        : 'Aadhaar Card No.'}
-    </label>
-    <input
-      type="text"
-      value={
-        (invoiceData.consignorDetails.idType || 'gstin') === 'gstin'
-          ? invoiceData.consignorDetails.gstin || ''
-          : invoiceData.consignorDetails.aadhaar || ''
-      }
-      onChange={(e) =>
-        (invoiceData.consignorDetails.idType || 'gstin') === 'gstin'
-          ? updateConsignorDetails({ gstin: e.target.value })
-          : updateConsignorDetails({ aadhaar: e.target.value })
-      }
-      placeholder={
-        (invoiceData.consignorDetails.idType || 'gstin') === 'gstin'
-          ? 'Enter GSTIN'
-          : 'e.g., 1234 5678 9012'
-      }
-      className={styles.formControl}
-      maxLength={(invoiceData.consignorDetails.idType || 'gstin') === 'gstin' ? 15 : 14}
-    />
-  </div>
-</div>
-      </fieldset>
+            <fieldset
+              className={s.formFields}
+              disabled={loading}
+            >
+              <legend className={s.srOnly}>
+                Export invoice details
+              </legend>
 
-      {/* Consignee Details */}
-      <fieldset className={styles.fieldset}>
-        <legend className={styles.legend}>Consignee Details *</legend>
-        <InternationalPartySelectors
-          invoiceData={invoiceData}
-          updateInvoiceData={updateInvoiceData}
-          updateConsignorDetails={updateConsignorDetails}
-          updateConsigneeDetails={updateConsigneeDetails}
-          showReceiver
-        />
-        
-        <div className={styles.formRow}>
-          <div className={styles.formControl}>
-            <label>Consignee Name *</label>
-            <input
-              type="text"
-              value={invoiceData.consigneeDetails.name}
-              onChange={(e) => updateConsigneeDetails({ name: e.target.value })}
-              placeholder="Full name"
-              className={styles.formControl}
-              required
-            />
+              <InvoiceModeSelector
+                value={invoiceData.mode}
+                onChange={applyMode}
+                disabled={loading}
+              />
+
+              <div className={s.modeDetails}>
+                <ModeDetails
+                  mode={invoiceData.mode}
+                  details={invoiceData.modeDetails}
+                  onChange={updateModeDetails}
+                />
+              </div>
+
+              {/* ================= INVOICE ================= */}
+
+              <FormSection
+                id="invoice-details"
+                number="01"
+                title="Invoice details"
+                description="Basic references, invoice date, and currency."
+              >
+                <div className={s.gridThree}>
+                  {rootField('invoiceNo', 'Invoice number', {
+                    required: true,
+                    placeholder: 'e.g. 61056923/25-26',
+                  })}
+
+                  {rootField('invoiceDate', 'Invoice date', {
+                    type: 'date',
+                    required: true,
+                  })}
+
+                  <InputField
+                    id="invoice-currency"
+                    label="Currency code"
+                    value={invoiceData.currencyCode}
+                    onChange={(value) =>
+                      updateInvoiceData({
+                        currencyCode: value.toUpperCase(),
+                        currencyName: '',
+                      })
+                    }
+                    maxLength={3}
+                    placeholder="USD"
+                    hint="Three-letter code, such as USD or EUR."
+                  />
+
+                  {rootField(
+                    'buyersOrderNo',
+                    "Buyer's order number",
+                    {
+                      placeholder: 'Order reference',
+                    }
+                  )}
+
+                  {rootField('otherRef', 'Other reference', {
+                    placeholder: 'Optional reference',
+                  })}
+                </div>
+              </FormSection>
+
+              {/* ================= SENDER ================= */}
+
+              <FormSection
+                id="sender-details"
+                number="02"
+                title="Sender / consignor"
+                description="Business identity and collection address."
+              >
+                <div className={s.partySelector}>
+                  <InternationalPartySelectors
+                    invoiceData={invoiceData}
+                    updateInvoiceData={updateInvoiceData}
+                    updateConsignorDetails={
+                      updateConsignorDetails
+                    }
+                    updateConsigneeDetails={
+                      updateConsigneeDetails
+                    }
+                    showSender
+                  />
+                </div>
+
+                <div className={s.gridTwo}>
+                  {senderField('company', 'Company / shipper name', {
+                    wide: true,
+                    placeholder: 'Registered company or shipper name',
+                  })}
+
+                  {senderField('address', 'Address line 1', {
+                    wide: true,
+                    placeholder: 'Street address',
+                  })}
+
+                  {senderField('building', 'Building name')}
+                  {senderField('area', 'Area / locality')}
+                  {senderField('city', 'City')}
+
+                  {senderField('phone', 'Phone number', {
+                    type: 'tel',
+                  })}
+
+                  <fieldset className={s.choiceField}>
+                    <legend>ID proof type</legend>
+
+                    <div className={s.segmentedControl}>
+                      {[
+                        ['gstin', 'GSTIN'],
+                        ['aadhaar', 'Aadhaar'],
+                      ].map(([value, label]) => (
+                        <label
+                          key={value}
+                          className={
+                            idType === value
+                              ? s.segmentSelected
+                              : ''
+                          }
+                        >
+                          <input
+                            type="radio"
+                            name="consignorIdType"
+                            value={value}
+                            checked={idType === value}
+                            onChange={() =>
+                              updateConsignorDetails({
+                                idType: value,
+                              })
+                            }
+                          />
+
+                          {label}
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+
+                  <InputField
+                    id="sender-identification"
+                    label={
+                      idType === 'gstin'
+                        ? 'GSTIN'
+                        : 'Aadhaar number'
+                    }
+                    value={
+                      idType === 'gstin'
+                        ? consignor.gstin
+                        : consignor.aadhaar
+                    }
+                    onChange={(value) =>
+                      updateConsignorDetails({
+                        [idType === 'gstin'
+                          ? 'gstin'
+                          : 'aadhaar']: value,
+                      })
+                    }
+                    maxLength={idType === 'gstin' ? 15 : 14}
+                    placeholder={
+                      idType === 'gstin'
+                        ? 'Enter GSTIN'
+                        : '1234 5678 9012'
+                    }
+                  />
+                </div>
+              </FormSection>
+
+              {/* ================= RECIPIENT ================= */}
+
+              <FormSection
+                id="receiver-details"
+                number="03"
+                title="Recipient / consignee"
+                description="Delivery contact and destination address."
+              >
+                <div className={s.partySelector}>
+                  <InternationalPartySelectors
+                    invoiceData={invoiceData}
+                    updateInvoiceData={updateInvoiceData}
+                    updateConsignorDetails={
+                      updateConsignorDetails
+                    }
+                    updateConsigneeDetails={
+                      updateConsigneeDetails
+                    }
+                    showReceiver
+                  />
+                </div>
+
+                <div className={s.gridTwo}>
+                  {receiverField('name', 'Recipient name', {
+                    required: true,
+                    placeholder: 'Full name',
+                  })}
+
+                  {receiverField('company', 'Company', {
+                    placeholder: 'Optional company name',
+                  })}
+
+                  {receiverField('address', 'Delivery address', {
+                    required: true,
+                    multiline: true,
+                    wide: true,
+                    placeholder: 'Full delivery address',
+                  })}
+
+                  {receiverField('city', 'City', {
+                    required: true,
+                  })}
+
+                  {receiverField('country', 'Country', {
+                    required: true,
+                  })}
+
+                  {receiverField('phone', 'Phone number', {
+                    type: 'tel',
+                    placeholder: 'Include country code',
+                  })}
+                </div>
+              </FormSection>
+
+              {/* ================= SHIPPING ================= */}
+
+              <FormSection
+                id="shipping-details"
+                number="04"
+                title="Shipping details"
+                description="Route, airway bill references, and package weights."
+              >
+                <div className={s.gridTwo}>
+                  {rootField('origin', 'Origin / port of loading')}
+                  {rootField('destination', 'Destination')}
+                  {rootField('portOfDischarge', 'Port of discharge')}
+                  {rootField('finalDestination', 'Final destination')}
+
+                  {rootField('shipmentNotes', 'Shipment notes', {
+                    wide: true,
+                    multiline: true,
+                    placeholder: 'Handling instructions or shipment notes',
+                  })}
+                </div>
+
+                <div className={s.subsection}>
+                  <h3>Certificate and package information</h3>
+
+                  <p>
+                    Optional details used when preparing supporting
+                    documents.
+                  </p>
+
+                  <div className={s.gridThree}>
+                    {rootField('awbNo', 'AWB number')}
+                    {rootField('mawbNo', 'MAWB number')}
+
+                    {rootField(
+                      'totalPackages',
+                      'Total number of packages'
+                    )}
+
+                    {rootField('netWeight', 'Net weight (KGS)')}
+                    {rootField('grossWeight', 'Gross weight (KGS)')}
+
+                    {rootField(
+                      'dimensionalWeight',
+                      'Dimensional weight',
+                      {
+                        placeholder: '53 × 58 × 96 = 60 KGS',
+                      }
+                    )}
+                  </div>
+                </div>
+              </FormSection>
+
+              {/* ================= ITEMS ================= */}
+
+              <FormSection
+                id="invoice-items"
+                number="05"
+                title="Goods and line items"
+                description="Descriptions, HSN codes, quantities, and pricing."
+              >
+                <InternationalInvoiceItems
+                  modeId={invoiceData.mode}
+                  currencyCode={invoiceData.currencyCode}
+                  items={items}
+                  onItemChange={updateItem}
+                  onAddItem={addItem}
+                  onRemoveItem={removeItem}
+                  disabled={loading}
+                />
+              </FormSection>
+            </fieldset>
           </div>
-          <div className={styles.formControl}>
-            <label>Company</label>
-            <input
-              type="text"
-              value={invoiceData.consigneeDetails.company}
-              onChange={(e) => updateConsigneeDetails({ company: e.target.value })}
-              placeholder="Company name"
-              className={styles.formControl}
-            />
-          </div>
+
+          {/* ================= SUMMARY ================= */}
+
+          <aside
+            className={s.summaryColumn}
+            aria-label="Invoice summary and actions"
+          >
+            <div className={s.summaryCard}>
+              <div className={s.summaryHeader}>
+                <h2>Invoice summary</h2>
+                <span className={s.badge}>Current form</span>
+              </div>
+
+              <dl className={s.summaryList}>
+                <div>
+                  <dt>Invoice number</dt>
+                  <dd>{invoiceData.invoiceNo || 'Not added'}</dd>
+                </div>
+
+                <div>
+                  <dt>Recipient</dt>
+                  <dd>{consignee.name || 'Not added'}</dd>
+                </div>
+
+                <div>
+                  <dt>Destination</dt>
+                  <dd>{consignee.country || 'Not added'}</dd>
+                </div>
+
+                <div>
+                  <dt>Line items</dt>
+                  <dd>{items.length}</dd>
+                </div>
+
+                <div>
+                  <dt>Shipment mode</dt>
+                  <dd>{mode?.label || 'Standard'}</dd>
+                </div>
+              </dl>
+
+              <div className={s.totalBlock}>
+                <span>Total invoice value</span>
+
+                <strong>
+                  <small>{currency}</small>{' '}
+                  {total.toLocaleString('en-IN', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </strong>
+
+                {amountInWords && <p>{amountInWords}</p>}
+              </div>
+
+              <div className={s.summaryActions}>
+                <button
+                  type="submit"
+                  className={`${s.button} ${s.primaryButton}`}
+                  disabled={loading}
+                >
+                  {loading ? 'Saving invoice…' : 'Save invoice'}
+                </button>
+
+                <button
+                  type="button"
+                  className={`${s.button} ${s.secondaryButton}`}
+                  disabled={loading || !canPreview}
+                  onClick={() => setShowPreview(true)}
+                >
+                  Preview & print
+                </button>
+
+                <button
+                  type="button"
+                  className={`${s.button} ${s.secondaryButton}`}
+                  disabled={loading || !canPreview}
+                  onClick={() => setShowDocs(true)}
+                >
+                  Open document center
+                </button>
+
+                <button
+                  type="button"
+                  className={s.resetButton}
+                  disabled={loading}
+                  onClick={handleReset}
+                >
+                  Reset form
+                </button>
+              </div>
+
+              {!canPreview && (
+                <p className={s.summaryHint}>
+                  Add an invoice number and recipient name to
+                  enable previews and documents.
+                </p>
+              )}
+
+              <p className={s.summaryHint}>
+                Apply document edits in the Document Center,
+                then save this invoice to retain them.
+              </p>
+            </div>
+          </aside>
         </div>
+      </form>
 
-        <div className={styles.formControl}>
-          <label>Address *</label>
-          <textarea
-            value={invoiceData.consigneeDetails.address}
-            onChange={(e) => updateConsigneeDetails({ address: e.target.value })}
-            placeholder="Full address"
-            className={styles.formControl}
-            required
-            style={{ minHeight: '80px' }}
-          />
-        </div>
-
-        <div className={styles.formRow}>
-          <div className={styles.formControl}>
-            <label>City *</label>
-            <input
-              type="text"
-              value={invoiceData.consigneeDetails.city}
-              onChange={(e) => updateConsigneeDetails({ city: e.target.value })}
-              placeholder="City"
-              className={styles.formControl}
-              required
-            />
-          </div>
-          <div className={styles.formControl}>
-            <label>Country *</label>
-            <input
-              type="text"
-              value={invoiceData.consigneeDetails.country}
-              onChange={(e) => updateConsigneeDetails({ country: e.target.value })}
-              placeholder="Country"
-              className={styles.formControl}
-              required
-            />
-          </div>
-          <div className={styles.formControl}>
-            <label>Phone</label>
-            <input
-              type="tel"
-              value={invoiceData.consigneeDetails.phone}
-              onChange={(e) => updateConsigneeDetails({ phone: e.target.value })}
-              placeholder="Phone number"
-              className={styles.formControl}
-            />
-          </div>
-        </div>
-      </fieldset>
-
-      {/* Origin & Destination */}
-      <fieldset className={styles.fieldset}>
-        <legend className={styles.legend}>Shipping Details</legend>
-        
-        <div className={styles.formRow}>
-          <div className={styles.formControl}>
-            <label>Origin (Port of Loading)</label>
-            <input
-              type="text"
-              value={invoiceData.origin}
-              onChange={(e) => updateInvoiceData({ origin: e.target.value })}
-              className={styles.formControl}
-            />
-          </div>
-          <div className={styles.formControl}>
-            <label>Destination</label>
-            <input
-              type="text"
-              value={invoiceData.destination}
-              onChange={(e) => updateInvoiceData({ destination: e.target.value })}
-              placeholder="Country/City"
-              className={styles.formControl}
-            />
-          </div>
-        </div>
-
-        <div className={styles.formRow}>
-          <div className={styles.formControl}>
-            <label>Port of Discharge</label>
-            <input
-              type="text"
-              value={invoiceData.portOfDischarge}
-              onChange={(e) => updateInvoiceData({ portOfDischarge: e.target.value })}
-              className={styles.formControl}
-            />
-          </div>
-          <div className={styles.formControl}>
-            <label>Final Destination</label>
-            <input
-              type="text"
-              value={invoiceData.finalDestination}
-              onChange={(e) => updateInvoiceData({ finalDestination: e.target.value })}
-              className={styles.formControl}
-            />
-          </div>
-        </div>
-
-        <div className={styles.formControl}>
-          <label>Shipment Notes</label>
-          <textarea
-            value={invoiceData.shipmentNotes}
-            onChange={(e) => updateInvoiceData({ shipmentNotes: e.target.value })}
-            className={styles.formControl}
-            style={{ minHeight: '60px' }}
-          />
-        </div>
-      </fieldset>
-
-<fieldset className={styles.fieldset}>
-  <legend className={styles.legend}>Shipment Details for Certificates (optional)</legend>
-  <div className={styles.formRow}>
-    <div className={styles.formControl}>
-      <label>AWB No</label>
-      <input type="text" value={invoiceData.awbNo || ''}
-        onChange={(e) => updateInvoiceData({ awbNo: e.target.value })}
-        className={styles.formControl} />
-    </div>
-    <div className={styles.formControl}>
-      <label>MAWB No</label>
-      <input type="text" value={invoiceData.mawbNo || ''}
-        onChange={(e) => updateInvoiceData({ mawbNo: e.target.value })}
-        className={styles.formControl} />
-    </div>
-  </div>
-  <div className={styles.formRow}>
-    <div className={styles.formControl}>
-      <label>Net Weight (KGS)</label>
-      <input type="text" value={invoiceData.netWeight || ''}
-        onChange={(e) => updateInvoiceData({ netWeight: e.target.value })}
-        className={styles.formControl} />
-    </div>
-    <div className={styles.formControl}>
-      <label>Gross Weight (KGS)</label>
-      <input type="text" value={invoiceData.grossWeight || ''}
-        onChange={(e) => updateInvoiceData({ grossWeight: e.target.value })}
-        className={styles.formControl} />
-    </div>
-    <div className={styles.formControl}>
-      <label>Total No. of Packages</label>
-      <input type="text" value={invoiceData.totalPackages || ''}
-        onChange={(e) => updateInvoiceData({ totalPackages: e.target.value })}
-        className={styles.formControl} />
-    </div>
-    <div className={styles.formControl}>
-  <label>Dimensional Weight</label>
-  <input type="text" value={invoiceData.dimensionalWeight || ''}
-    onChange={(e) => updateInvoiceData({ dimensionalWeight: e.target.value })}
-    placeholder="53 X58 X96 = 60 KGS"
-    className={styles.formControl} />
-</div>
-  </div>
-</fieldset>
-
-      {/* Items */}
-      <fieldset className={styles.fieldset}>
-        <legend className={styles.legend}>Line Items</legend>
-        <InternationalInvoiceItems
-          modeId={invoiceData.mode}
-          items={invoiceData.items}
-          onItemChange={updateItem}
-          onAddItem={addItem}
-          onRemoveItem={removeItem}
-        />
-      </fieldset>
-
-      {/* Total Section */}
-      <div className={styles.totalSection}>
-        <div className={styles.totalLabel}>Total Amount</div>
-        <div className={styles.totalAmount}>
-          {invoiceData.currencyCode} {getTotalAmount().toLocaleString('en-IN', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
-        </div>
-        <div className={styles.amountInWords}>
-          ({getAmountInWords(getTotalAmount()).toUpperCase()})
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className={styles.actionButtons}>
-        <button
-          type="button"
-          onClick={() => setShowPreview(true)}
-          className="btn btn-primary"
-          disabled={loading || !invoiceData.invoiceNo || !invoiceData.consigneeDetails.name}
-        >
-          Preview & Print
-        </button>
-        <button
-  type="button"
-  onClick={() => setShowDocs(true)}
-  className="btn btn-primary"
-  disabled={loading || !invoiceData.invoiceNo || !invoiceData.consigneeDetails.name}
->
-  Documents ({mode.docs.length})
-</button>
-        <button
-          type="button"
-          onClick={handleSave}
-          className="btn btn-success"
-          disabled={loading}
-        >
-          {loading ? 'Saving...' : 'Save Invoice'}
-        </button>
-        <button
-          type="button"
-          onClick={resetForm}
-          className="btn btn-secondary"
-          disabled={loading}
-        >
-          Reset
-        </button>
-      </div>
-
-      {/* Preview Modal */}
       {showPreview && (
         <InternationalInvoicePreview
           invoiceData={invoiceData}
           onClose={() => setShowPreview(false)}
         />
       )}
+
       {showDocs && (
-  <ExportDocumentsModal
-    invoiceData={invoiceData}
-    recommendedDocs={mode.docs}
-    onClose={() => setShowDocs(false)}
-    onSave={(supportingDocuments) => updateInvoiceData({ supportingDocuments })}
-  />
-)}
+        <ExportDocumentsModal
+          invoiceData={invoiceData}
+          onClose={() => setShowDocs(false)}
+          onSave={(supportingDocuments) =>
+            updateInvoiceData({ supportingDocuments })
+          }
+        />
+      )}
     </div>
   );
 };

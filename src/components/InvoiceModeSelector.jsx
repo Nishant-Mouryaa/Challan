@@ -1,42 +1,92 @@
-import { DOC_LABELS, MODE_LIST } from '../data/invoiceModes';
-import styles from '../styles/modes.module.css';
+import React from 'react';
 
-const InvoiceModeSelector = ({ value, onChange }) => {
-  const mode = MODE_LIST.find((item) => item.id === value) || MODE_LIST[0];
+import { DOC_LABELS, MODE_LIST } from '../data/invoiceModes';
+import s from '../styles/invoiceWorkspace.module.css';
+
+const InvoiceModeSelector = ({
+  value,
+  onChange,
+  disabled = false,
+}) => {
+  const mode =
+    MODE_LIST.find((item) => item.id === value) ||
+    MODE_LIST[0];
 
   return (
-    <section className={styles.wrap} aria-labelledby="invoice-mode-heading">
-      <h2 className={styles.heading} id="invoice-mode-heading">
-        Invoice mode
-      </h2>
-      <p className={styles.hint}>
-        Choose the type of shipment to tailor the invoice and recommended documents.
-      </p>
-      <div className={styles.grid}>
-        {MODE_LIST.map((item) => (
-          <button
-            className={`${styles.option} ${
-              value === item.id ? styles.optionActive : ''
-            }`}
-            type="button"
-            key={item.id}
-            aria-pressed={value === item.id}
-            onClick={() => onChange(item.id)}
-          >
-            <span className={styles.optionText}>
-              <span className={styles.optionLabel}>{item.label}</span>
-              <span className={styles.optionTagline}>{item.tagline}</span>
-            </span>
-          </button>
-        ))}
+    <section
+      className={s.modeCard}
+      aria-labelledby="invoice-mode-heading"
+    >
+      <div className={s.modeHeading}>
+        <div>
+          <div className={s.eyebrow}>START HERE</div>
+
+          <h2 id="invoice-mode-heading">
+            What are you shipping?
+          </h2>
+
+          <p>
+            Choose a shipment type to tailor product fields and
+            document recommendations.
+          </p>
+        </div>
+
+        <span className={s.badge}>Shipment type</span>
       </div>
-      <div className={styles.docs} aria-live="polite">
-        <span>Recommended documents:</span>
-        {mode.docs.map((documentId) => (
-          <span className={styles.chip} key={documentId}>
-            {DOC_LABELS[documentId] || documentId}
-          </span>
-        ))}
+
+      <div
+        className={s.modeGrid}
+        role="group"
+        aria-labelledby="invoice-mode-heading"
+      >
+        {MODE_LIST.map((item) => {
+          const selected = mode?.id === item.id;
+
+          return (
+            <button
+              key={item.id}
+              type="button"
+              className={`${s.modeOption} ${
+                selected ? s.modeOptionActive : ''
+              }`}
+              onClick={() => onChange(item.id)}
+              aria-pressed={selected}
+              disabled={disabled}
+            >
+              <span
+                className={s.modeIndicator}
+                aria-hidden="true"
+              >
+                {selected ? '✓' : ''}
+              </span>
+
+              <span>
+                <strong>{item.label}</strong>
+                <span>{item.tagline}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className={s.recommendedDocs} aria-live="polite">
+        <span className={s.recommendedLabel}>
+          Recommended documents
+        </span>
+
+        <div className={s.chipList}>
+          {(mode?.docs || []).map((documentId) => (
+            <span key={documentId} className={s.chip}>
+              {DOC_LABELS[documentId] || documentId}
+            </span>
+          ))}
+
+          {!mode?.docs?.length && (
+            <span className={s.mutedText}>
+              No additional recommendations for this mode.
+            </span>
+          )}
+        </div>
       </div>
     </section>
   );
