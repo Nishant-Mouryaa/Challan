@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import Link from 'next/link';
 import styles from '../styles/form.module.css';
+import workspace from '../styles/challanWorkspace.module.css';
 import SenderSelector from './SenderSelector';
 import ClientSelector from './ClientSelector';
 import ItemsTable from './ItemsTable';
@@ -74,12 +76,6 @@ const ChallanForm = ({ initialData = null }) => {
       setSuccessMessage(
         initialData ? 'Challan updated successfully!' : 'Challan saved successfully!'
       );
-      if (!initialData) {
-        setTimeout(() => {
-          setSuccessMessage('');
-          resetForm();
-        }, 3000);
-      }
     } catch (error) {
       console.error('Error saving challan:', error);
       setSuccessMessage(error.message || 'Error saving challan. Please try again.');
@@ -89,20 +85,55 @@ const ChallanForm = ({ initialData = null }) => {
   };
 
   return (
-    <div className={styles.formContainer}>
-      <div className={styles.formHeader}>
-        <h1>Create Delivery Challan</h1>
-        <p>Fill in the details below to generate a delivery challan</p>
-      </div>
+    <div className={workspace.page}>
+      <header className={workspace.pageHeader}>
+        <div>
+          <div className={workspace.eyebrow}>DOMESTIC SHIPPING</div>
+          <h1>
+            {initialData ? 'Edit delivery challan' : 'Create delivery challan'}
+          </h1>
+          <p>Prepare, review, and manage delivery challan details.</p>
+        </div>
+        <Link
+          href="/view-challans"
+          className={`${workspace.button} ${workspace.secondaryButton}`}
+        >
+          View all challans
+        </Link>
+      </header>
 
       {successMessage && (
-        <div className={successMessage.includes('Error') ? styles.error : styles.success}>
+        <div
+          className={
+            successMessage.includes('Error')
+              ? workspace.errorAlert
+              : workspace.successAlert
+          }
+          role={successMessage.includes('Error') ? 'alert' : 'status'}
+        >
           {successMessage}
         </div>
       )}
 
+      <div className={workspace.formWorkspace}>
+        <div className={workspace.formColumn}>
+          <nav className={workspace.sectionNav} aria-label="Challan sections">
+            {[
+              ['challan-details', 'Details'],
+              ['sender-details', 'Sender'],
+              ['receiver-details', 'Recipient'],
+              ['challan-items', 'Items'],
+            ].map(([id, label], index) => (
+              <a key={id} href={`#${id}`}>
+                <span>{index + 1}</span>
+                {label}
+              </a>
+            ))}
+          </nav>
+
+          <div className={workspace.formSections}>
       {/* Challan Details */}
-      <fieldset className={styles.fieldset}>
+      <fieldset id="challan-details" className={`${styles.fieldset} ${workspace.sectionCard}`}>
         <legend className={styles.legend}>Challan Details</legend>
         <div className={styles.formRow}>
           <div className={styles.formControl}>
@@ -128,7 +159,7 @@ const ChallanForm = ({ initialData = null }) => {
       </fieldset>
 
       {/* Sender Details - Now Editable and Selectable */}
-      <fieldset className={styles.fieldset}>
+      <fieldset id="sender-details" className={`${styles.fieldset} ${workspace.sectionCard}`}>
         <legend className={styles.legend}>Sender Details</legend>
         <SenderSelector
           senderId={challanData.senderId}
@@ -139,7 +170,7 @@ const ChallanForm = ({ initialData = null }) => {
       </fieldset>
 
       {/* Receiver Details */}
-      <fieldset className={styles.fieldset}>
+      <fieldset id="receiver-details" className={`${styles.fieldset} ${workspace.sectionCard}`}>
         <legend className={styles.legend}>Receiver Details</legend>
         <ClientSelector
           onSelect={handleClientSelect}
@@ -229,7 +260,7 @@ const ChallanForm = ({ initialData = null }) => {
       </fieldset>
 
       {/* Items */}
-      <fieldset className={styles.fieldset}>
+      <fieldset id="challan-items" className={`${styles.fieldset} ${workspace.sectionCard}`}>
         <legend className={styles.legend}>Items</legend>
         <ItemsTable
           items={challanData.items}
@@ -240,7 +271,7 @@ const ChallanForm = ({ initialData = null }) => {
       </fieldset>
 
       {/* Total Section */}
-      <div className={styles.totalSection}>
+      <div className={`${styles.totalSection} ${workspace.totalSection}`}>
         <div className={styles.totalLabel}>Total Value</div>
         <div className={styles.totalAmount}>
           ₹{getTotalAmount().toLocaleString('en-IN', {
@@ -257,7 +288,7 @@ const ChallanForm = ({ initialData = null }) => {
       </div>
 
       {/* Action Buttons */}
-      <div className={styles.actionButtons}>
+      <div className={`${styles.actionButtons} ${workspace.actionButtons}`}>
         <button
           type="button"
           onClick={() => setShowPreview(true)}
@@ -283,6 +314,53 @@ const ChallanForm = ({ initialData = null }) => {
         >
           Reset
         </button>
+      </div>
+          </div>
+        </div>
+
+        <aside className={workspace.summary} aria-label="Challan summary">
+          <div className={workspace.summaryHeader}>
+            <span className={workspace.summaryIcon} aria-hidden="true">
+              DC
+            </span>
+            <div>
+              <strong>Challan summary</strong>
+              <span>Live document overview</span>
+            </div>
+          </div>
+
+          <dl className={workspace.summaryDetails}>
+            <div>
+              <dt>Challan number</dt>
+              <dd>{challanData.challanNo || '—'}</dd>
+            </div>
+            <div>
+              <dt>Date</dt>
+              <dd>{challanData.date || '—'}</dd>
+            </div>
+            <div>
+              <dt>Recipient</dt>
+              <dd>{challanData.receiverDetails.name || 'Not selected'}</dd>
+            </div>
+            <div>
+              <dt>Line items</dt>
+              <dd>{challanData.items.length}</dd>
+            </div>
+          </dl>
+
+          <div className={workspace.summaryTotal}>
+            <span>Total value</span>
+            <strong>
+              ₹{getTotalAmount().toLocaleString('en-IN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </strong>
+          </div>
+          <p className={workspace.summaryNote}>
+            This value is for customs / courier purposes only.
+          </p>
+        </aside>
       </div>
 
       {/* Preview Modal */}
