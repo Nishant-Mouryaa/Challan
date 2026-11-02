@@ -315,7 +315,7 @@ export default function DtdcMisPage() {
                     {sourceType === 'workspace'
                       ? 'Workspace accepts CSV or .xlsx files.'
                       : 'PUDO accepts CSV files.'}{' '}
-                    Maximum 1 MB and 1,000 rows per file.
+                    Maximum 1 MB and 3,000 rows per file.
                   </span>
 
                   <input

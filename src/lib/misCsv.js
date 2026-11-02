@@ -6,7 +6,7 @@ import {
   normalizeClientName,
 } from './misApi';
 
-const MAX_ROWS = 1000;
+const MAX_ROWS = 3000;
 
 const REQUIRED_HEADERS = {
   pudo: [
