@@ -170,6 +170,11 @@ export default withMisWorkspace(
         width: 23,
       },
       {
+        header: 'Booking Date',
+        key: 'bookingDate',
+        width: 16,
+      },
+      {
         header: 'Sender / Client Name',
         key: 'clientName',
         width: 28,
@@ -210,12 +215,14 @@ export default withMisWorkspace(
     sheet.getColumn('consignmentNo').numFmt = '@';
     sheet.getColumn('pincode').numFmt = '@';
 
+    sheet.getColumn('bookingDate').numFmt = 'dd/mm/yyyy';
     sheet.getColumn('deliveredDate').numFmt =
       'dd/mm/yyyy';
 
     for (const shipment of rows) {
       const excelRow = sheet.addRow({
         consignmentNo: text(shipment.consignment_no),
+        bookingDate: toExcelDate(shipment.booking_date),
 
         // Matches the preview: reporting client first.
         clientName: text(
@@ -250,10 +257,9 @@ export default withMisWorkspace(
         wrapText: true,
       };
 
-      // Highlight review cases without adding a ninth column
-      // or changing the saved shipment status.
+      // Highlight review cases without changing the saved shipment status.
       if (shipment.needs_review) {
-        const statusCell = excelRow.getCell(7);
+        const statusCell = excelRow.getCell(8);
 
         statusCell.fill = {
           type: 'pattern',
@@ -300,7 +306,7 @@ export default withMisWorkspace(
 
     sheet.autoFilter = {
       from: { row: 1, column: 1 },
-      to: { row: 1, column: 8 },
+      to: { row: 1, column: 9 },
     };
 
     sheet.pageSetup = {

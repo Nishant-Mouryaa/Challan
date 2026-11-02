@@ -6,6 +6,7 @@ const PAGE_SIZE = 50;
 
 const DISPLAY_COLUMNS = [
   'Consignment No.',
+  'Booking Date',
   'Sender / Client Name',
   'Recipient Name',
   'Recipient Address',
@@ -479,6 +480,12 @@ export default function MisReportPanel({ clients, requestJson }) {
                             <strong>
                               {shipment.consignmentNo}
                             </strong>
+                          </td>
+
+                          <td>
+                            {formatDeliveredDate(
+                              shipment.bookingDate
+                            )}
                           </td>
 
                           <td>
