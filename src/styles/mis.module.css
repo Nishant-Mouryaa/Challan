@@ -81,8 +81,7 @@
 }
 
 .field input,
-.field select,
-.mappingRow select {
+.field select {
   width: 100%;
   min-width: 0;
   min-height: 40px;
@@ -252,21 +251,6 @@
   font-size: 13px;
 }
 
-.mappingRow {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px auto;
-  align-items: center;
-  gap: 12px;
-  padding: 13px 0;
-  border-bottom: 1px solid var(--color-border-light, #e7eaee);
-}
-
-.mappingRow > strong {
-  font-size: 11px;
-  line-height: 1.6;
-  overflow-wrap: anywhere;
-}
-
 .issueList {
   margin: 0 0 12px;
   padding-left: 20px;
@@ -311,13 +295,6 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .mappingRow {
-    grid-template-columns: minmax(0, 1fr) 200px;
-  }
-
-  .mappingRow > .secondary {
-    grid-column: 2;
-  }
 }
 
 @media (max-width: 650px) {
@@ -340,18 +317,8 @@
     padding: 16px;
   }
 
-  .mappingRow {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 9px;
-  }
-
-  .mappingRow > .secondary {
-    grid-column: auto;
-  }
-
   .field input,
-  .field select,
-  .mappingRow select {
+  .field select {
     font-size: 16px;
   }
 
@@ -450,9 +417,61 @@
   line-height: 1.7;
 }
 
+.exportColumns {
+  min-width: 0;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--color-border-light, #e7eaee);
+  border-radius: 8px;
+}
+
+.exportColumns legend {
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.exportColumns > .help {
+  margin: 0 0 12px;
+}
+
+.exportColumnGrid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(180px, 1fr)
+  );
+  gap: 8px 14px;
+}
+
+.exportColumnOption {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  color: var(--color-text-secondary, #5a6270);
+  font-size: 11px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.exportColumnOption input {
+  flex: 0 0 auto;
+  margin: 2px 0 0;
+  accent-color: var(--color-red-primary, #c41e3a);
+}
+
+.exportColumnOption input:disabled {
+  cursor: not-allowed;
+}
+
 @media (max-width: 650px) {
   .reportFilters {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .exportColumnGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .reportPagination {

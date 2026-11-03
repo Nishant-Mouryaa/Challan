@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import s from '../styles/mis.module.css';
 import { authenticatedFetch } from '../lib/supabaseClient';
+import MIS_EXPORT_COLUMNS from '../lib/misExportColumns';
 
 const PAGE_SIZE = 50;
 
@@ -14,7 +15,12 @@ const DISPLAY_COLUMNS = [
   'Pincode',
   'Consignment Status',
   'Delivered Date',
+  'Received By',
 ];
+
+const DEFAULT_EXPORT_COLUMN_KEYS = MIS_EXPORT_COLUMNS
+  .filter((column) => column.defaultSelected)
+  .map((column) => column.key);
 
 function formatDeliveredDate(value) {
   if (!value) return '—';
@@ -33,10 +39,17 @@ function formatDeliveredDate(value) {
   }).format(date);
 }
 
-export default function MisReportPanel({ clients, requestJson }) {
+export default function MisReportPanel({
+  clients,
+  requestJson,
+  refreshToken,
+}) {
   const [clientId, setClientId] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [exportColumnKeys, setExportColumnKeys] = useState(
+    DEFAULT_EXPORT_COLUMN_KEYS
+  );
 
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState('');
@@ -107,7 +120,7 @@ export default function MisReportPanel({ clients, requestJson }) {
     return () => {
       ignore = true;
     };
-  }, [query, requestJson]);
+  }, [query, requestJson, refreshToken]);
 
   // Download the displayed report as an Excel file.
   // NOTE: This must live OUTSIDE useEffect so the button's
@@ -128,6 +141,7 @@ export default function MisReportPanel({ clients, requestJson }) {
       clientId: query.clientId,
       from: query.from,
       to: query.to,
+      fields: exportColumnKeys.join(','),
     };
 
     setDownloading(true);
@@ -271,6 +285,14 @@ export default function MisReportPanel({ clients, requestJson }) {
       return;
     }
 
+    function toggleExportColumn(key) {
+      setExportColumnKeys((previous) =>
+        previous.includes(key)
+          ? previous.filter((columnKey) => columnKey !== key)
+          : [...previous, key]
+      );
+    }
+
     setReport(null);
     setRequestError('');
     setLoading(true);
@@ -372,6 +394,37 @@ export default function MisReportPanel({ clients, requestJson }) {
           </div>
         </form>
 
+        <fieldset className={s.exportColumns}>
+          <legend>Excel report columns</legend>
+          <p className={s.help}>
+            Choose the shipment details to include in your Excel
+            report. Received By is included by default.
+          </p>
+
+          <div className={s.exportColumnGrid}>
+            {MIS_EXPORT_COLUMNS.map((column) => (
+              <label
+                key={column.key}
+                className={s.exportColumnOption}
+              >
+                <input
+                  type="checkbox"
+                  checked={exportColumnKeys.includes(column.key)}
+                  disabled={
+                    downloading ||
+                    (exportColumnKeys.length === 1 &&
+                      exportColumnKeys.includes(column.key))
+                  }
+                  onChange={() =>
+                    toggleExportColumn(column.key)
+                  }
+                />
+                <span>{column.header}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
         {!clients.length && (
           <p className={s.help}>
             Create a reporting client above before using
@@ -446,9 +499,9 @@ export default function MisReportPanel({ clients, requestJson }) {
 
                 <p>
                   Check the booking dates and client mapping.
-                  If you saved a mapping after importing PUDO,
-                  re-preview and confirm that PUDO file to
-                  apply the mapping to its shipments.
+                  Confirm the PUDO import to create any missing
+                  clients and save their customer-name mappings,
+                  then preview this report again.
                 </p>
               </div>
             ) : (
@@ -537,6 +590,8 @@ export default function MisReportPanel({ clients, requestJson }) {
                                 )
                               : '—'}
                           </td>
+
+                          <td>{shipment.receivedBy || '—'}</td>
                         </tr>
                       ))}
                     </tbody>

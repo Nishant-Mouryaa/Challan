@@ -7,6 +7,11 @@ import {
   requireUuid,
   withMisWorkspace,
 } from '../../../../lib/misApi';
+import MIS_EXPORT_COLUMNS from '../../../../lib/misExportColumns';
+
+const DEFAULT_EXPORT_COLUMN_KEYS = MIS_EXPORT_COLUMNS
+  .filter((column) => column.defaultSelected)
+  .map((column) => column.key);
 
 const MAX_EXPORT_ROWS = 10000;
 
@@ -95,6 +100,47 @@ export default withMisWorkspace(
       );
     }
 
+    const requestedFields = queryString(
+      req.query.fields,
+      'Export fields'
+    );
+
+    if (requestedFields.length > 1000) {
+      throw apiError(400, 'Export fields are too long.');
+    }
+
+    const requestedColumnKeys = requestedFields
+      ? requestedFields.split(',')
+      : DEFAULT_EXPORT_COLUMN_KEYS;
+
+    const allowedColumnKeys = new Set(
+      MIS_EXPORT_COLUMNS.map((column) => column.key)
+    );
+
+    if (
+      !requestedColumnKeys.length ||
+      requestedColumnKeys.some(
+        (key) => !allowedColumnKeys.has(key)
+      )
+    ) {
+      throw apiError(
+        400,
+        'One or more selected export fields are invalid.'
+      );
+    }
+
+    const selectedColumnKeys = new Set(requestedColumnKeys);
+    const selectedColumns = MIS_EXPORT_COLUMNS.filter(
+      (column) => selectedColumnKeys.has(column.key)
+    );
+
+    if (!selectedColumns.length) {
+      throw apiError(
+        400,
+        'Select at least one field for the Excel report.'
+      );
+    }
+
     // Confirm the selected client belongs to this workspace.
     const {
       data: client,
@@ -163,94 +209,63 @@ export default withMisWorkspace(
       },
     ];
 
-    sheet.columns = [
-      {
-        header: 'Consignment No.',
-        key: 'consignmentNo',
-        width: 23,
-      },
-      {
-        header: 'Booking Date',
-        key: 'bookingDate',
-        width: 16,
-      },
-      {
-        header: 'Sender / Client Name',
-        key: 'clientName',
-        width: 28,
-      },
-      {
-        header: 'Recipient Name',
-        key: 'recipientName',
-        width: 28,
-      },
-      {
-        header: 'Recipient Address',
-        key: 'recipientAddress',
-        width: 60,
-      },
-      {
-        header: 'Destination Location',
-        key: 'destinationLocation',
-        width: 25,
-      },
-      {
-        header: 'Pincode',
-        key: 'pincode',
-        width: 13,
-      },
-      {
-        header: 'Consignment Status',
-        key: 'status',
-        width: 25,
-      },
-      {
-        header: 'Delivered Date',
-        key: 'deliveredDate',
-        width: 18,
-      },
-    ];
+    sheet.columns = selectedColumns.map(
+      ({ header, key, width }) => ({
+        header,
+        key,
+        width,
+      })
+    );
 
     // Identifiers are written as strings, with text formatting.
-    sheet.getColumn('consignmentNo').numFmt = '@';
-    sheet.getColumn('pincode').numFmt = '@';
+    for (const column of selectedColumns) {
+      if (column.key === 'consignmentNo' || column.key === 'pincode') {
+        sheet.getColumn(column.key).numFmt = '@';
+      }
 
-    sheet.getColumn('bookingDate').numFmt = 'dd/mm/yyyy';
-    sheet.getColumn('deliveredDate').numFmt =
-      'dd/mm/yyyy';
+      if (column.date) {
+        sheet.getColumn(column.key).numFmt = 'dd/mm/yyyy';
+      }
+    }
 
     for (const shipment of rows) {
-      const excelRow = sheet.addRow({
-        consignmentNo: text(shipment.consignment_no),
-        bookingDate: toExcelDate(shipment.booking_date),
+      const excelRow = sheet.addRow(
+        Object.fromEntries(
+          selectedColumns.map((column) => {
+            if (column.key === 'clientName') {
+              return [
+                column.key,
+                text(client.name || shipment.sender_name),
+              ];
+            }
 
-        // Matches the preview: reporting client first.
-        clientName: text(
-          client.name || shipment.sender_name
-        ),
+            if (column.key === 'status') {
+              return [
+                column.key,
+                text(
+                  shipment.current_status ||
+                    'Tracking unavailable'
+                ),
+              ];
+            }
 
-        recipientName: text(shipment.recipient_name),
+            if (column.date) {
+              return [
+                column.key,
+                column.key === 'deliveredDate' &&
+                shipment.current_status !== 'Delivered'
+                  ? null
+                  : toExcelDate(shipment[column.source]),
+              ];
+            }
 
-        recipientAddress: text(
-          shipment.recipient_address
-        ),
-
-        destinationLocation: text(
-          shipment.destination_city
-        ),
-
-        pincode: text(shipment.destination_pincode),
-
-        status: text(
-          shipment.current_status ||
-            'Tracking unavailable'
-        ),
-
-        deliveredDate:
-          shipment.current_status === 'Delivered'
-            ? toExcelDate(shipment.delivered_at)
-            : null,
-      });
+            return [
+              column.key,
+              text(shipment[column.source]),
+            ];
+          })
+        )
+      );
 
       excelRow.alignment = {
         vertical: 'top',
@@ -258,8 +273,14 @@ export default withMisWorkspace(
       };
 
       // Highlight review cases without changing the saved shipment status.
-      if (shipment.needs_review) {
-        const statusCell = excelRow.getCell(8);
+      const statusColumnIndex = selectedColumns.findIndex(
+        (column) => column.key === 'status'
+      );
+
+      if (shipment.needs_review && statusColumnIndex >= 0) {
+        const statusCell = excelRow.getCell(
+          statusColumnIndex + 1
+        );
 
         statusCell.fill = {
           type: 'pattern',
@@ -306,7 +327,7 @@ export default withMisWorkspace(
 
     sheet.autoFilter = {
       from: { row: 1, column: 1 },
-      to: { row: 1, column: 9 },
+      to: { row: 1, column: selectedColumns.length },
     };
 
     sheet.pageSetup = {

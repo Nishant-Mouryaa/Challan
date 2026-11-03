@@ -71,7 +71,7 @@ export default function DtdcMisPage() {
 
   const [clients, setClients] = useState([]);
   const [clientName, setClientName] = useState('');
-  const [mappings, setMappings] = useState({});
+  const [reportRefreshToken, setReportRefreshToken] = useState(0);
 
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
@@ -104,7 +104,6 @@ export default function DtdcMisPage() {
 
   const clearPreview = () => {
     setResult(null);
-    setMappings({});
     setError('');
     setNotice('');
   };
@@ -133,12 +132,20 @@ export default function DtdcMisPage() {
       );
 
       setResult(data);
-      setMappings({});
 
       if (!preview) {
+        setReportRefreshToken((previous) => previous + 1);
         setNotice(
           'Import completed. Valid records were processed; conflicts were not overwritten.'
         );
+
+        try {
+          await loadClients();
+        } catch (refreshError) {
+          setError(
+            `Import completed, but the client list could not be refreshed: ${refreshError.message}`
+          );
+        }
       }
     } catch (requestError) {
       setError(requestError.message);
@@ -169,50 +176,6 @@ export default function DtdcMisPage() {
       await loadClients();
 
       setNotice('Client created. You can now map its PUDO customer name.');
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setBusy('');
-    }
-  };
-
-  const saveMapping = async (sourceName) => {
-    const clientId = mappings[sourceName];
-
-    if (!clientId || busy) return;
-
-    setBusy(`mapping:${sourceName}`);
-    setError('');
-    setNotice('');
-
-    try {
-      await requestJson(
-        '/api/mis/aliases',
-        jsonOptions({
-          sourceName,
-          clientId,
-        })
-      );
-
-      setResult((previous) =>
-        previous
-          ? {
-              ...previous,
-              missingClients:
-                previous.missingClients?.filter(
-                  (name) => name !== sourceName
-                ) || [],
-            }
-          : previous
-      );
-      setMappings((previous) => {
-        const next = { ...previous };
-        delete next[sourceName];
-        return next;
-      });
-      setNotice(
-        'Mapping saved. Continue mapping the remaining customer names, then confirm the import.'
-      );
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -513,61 +476,24 @@ export default function DtdcMisPage() {
                   not an additional import outcome.
                 </p>
 
-                {/* Missing customer-name mappings */}
+                {/* Customer names resolved on confirmation */}
                 {result.missingClients?.length > 0 && (
                   <div className={s.section}>
-                    <h3>Customer names needing a mapping</h3>
+                    <h3>Customer names to map automatically</h3>
 
                     <p className={s.help}>
-                      Choose which reporting client owns each
-                      PUDO customer name.
+                      On confirmation, each name will use an
+                      existing reporting client with the same
+                      normalized name, or create a client using
+                      the PUDO customer name and save its mapping.
+                      Preview does not create clients or mappings.
                     </p>
 
-                    {result.missingClients.map((name) => (
-                      <div
-                        key={name}
-                        className={s.mappingRow}
-                      >
-                        <strong>{name}</strong>
-
-                        <select
-                          aria-label={`Reporting client for ${name}`}
-                          value={mappings[name] || ''}
-                          disabled={Boolean(busy)}
-                          onChange={(event) =>
-                            setMappings((previous) => ({
-                              ...previous,
-                              [name]: event.target.value,
-                            }))
-                          }
-                        >
-                          <option value="">
-                            Select client
-                          </option>
-
-                          {clients.map((client) => (
-                            <option
-                              key={client.id}
-                              value={client.id}
-                            >
-                              {client.name}
-                            </option>
-                          ))}
-                        </select>
-
-                        <button
-                          type="button"
-                          className={s.secondary}
-                          disabled={
-                            !mappings[name] ||
-                            Boolean(busy)
-                          }
-                          onClick={() => saveMapping(name)}
-                        >
-                          Save mapping
-                        </button>
-                      </div>
-                    ))}
+                    <ul>
+                      {result.missingClients.map((name) => (
+                        <li key={name}>{name}</li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 
@@ -649,7 +575,8 @@ export default function DtdcMisPage() {
            <MisReportPanel
           clients={clients}
           requestJson={requestJson}
-        />
+             refreshToken={reportRefreshToken}
+           />
         </div>
       </MainLayout>
     </>

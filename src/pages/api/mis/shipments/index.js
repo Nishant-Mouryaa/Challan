@@ -18,6 +18,7 @@ const SHIPMENT_COLUMNS = [
   'sender_name',
   'recipient_name',
   'recipient_address',
+  'received_by',
   'booking_date',
   'destination_city',
   'destination_state',
@@ -249,6 +250,7 @@ export default withMisWorkspace(
 
         recipientName: row.recipient_name,
         recipientAddress: row.recipient_address,
+        receivedBy: row.received_by,
 
         destinationLocation: row.destination_city,
         destinationState: row.destination_state,
