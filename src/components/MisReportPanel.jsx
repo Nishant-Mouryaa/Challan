@@ -5,24 +5,11 @@ import MIS_EXPORT_COLUMNS from '../lib/misExportColumns';
 
 const PAGE_SIZE = 50;
 
-const DISPLAY_COLUMNS = [
-  'Consignment No.',
-  'Booking Date',
-  'Sender / Client Name',
-  'Recipient Name',
-  'Recipient Address',
-  'Destination Location',
-  'Pincode',
-  'Consignment Status',
-  'Delivered Date',
-  'Received By',
-];
-
 const DEFAULT_EXPORT_COLUMN_KEYS = MIS_EXPORT_COLUMNS
   .filter((column) => column.defaultSelected)
   .map((column) => column.key);
 
-function formatDeliveredDate(value) {
+function formatReportDate(value) {
   if (!value) return '—';
 
   const date = new Date(value);
@@ -47,6 +34,7 @@ export default function MisReportPanel({
   const [clientId, setClientId] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [consignmentSearch, setConsignmentSearch] = useState('');
   const [exportColumnKeys, setExportColumnKeys] = useState(
     DEFAULT_EXPORT_COLUMN_KEYS
   );
@@ -81,10 +69,16 @@ export default function MisReportPanel({
           to: query.to,
           page: String(query.page),
           pageSize: String(PAGE_SIZE),
+          sortBy: query.sortBy,
+          sortDirection: query.sortDirection,
 
           // Matches the existing endpoint's parent-only reporting.
           includeChildren: 'false',
         });
+
+        if (query.search) {
+          params.set('q', query.search);
+        }
 
         const data = await requestJson(
           `/api/mis/shipments?${params.toString()}`
@@ -143,6 +137,10 @@ export default function MisReportPanel({
       to: query.to,
       fields: exportColumnKeys.join(','),
     };
+
+    if (query.search) {
+      exportQuery.q = query.search;
+    }
 
     setDownloading(true);
     setDownloadError('');
@@ -271,7 +269,10 @@ export default function MisReportPanel({
       clientId,
       from,
       to,
+      search: consignmentSearch.trim(),
       page: 1,
+      sortBy: 'bookingDate',
+      sortDirection: 'desc',
     });
   }
 
@@ -285,14 +286,6 @@ export default function MisReportPanel({
       return;
     }
 
-    function toggleExportColumn(key) {
-      setExportColumnKeys((previous) =>
-        previous.includes(key)
-          ? previous.filter((columnKey) => columnKey !== key)
-          : [...previous, key]
-      );
-    }
-
     setReport(null);
     setRequestError('');
     setLoading(true);
@@ -301,6 +294,59 @@ export default function MisReportPanel({
       ...previous,
       page: nextPage,
     }));
+  }
+
+  function toggleExportColumn(key) {
+    setExportColumnKeys((previous) =>
+      previous.includes(key)
+        ? previous.filter((columnKey) => columnKey !== key)
+        : [...previous, key]
+    );
+  }
+
+  function changeSort(column) {
+    if (!query || !column || column.sortable === false || loading) {
+      return;
+    }
+
+    const sortDirection =
+      query.sortBy === column.key &&
+      query.sortDirection === 'asc'
+        ? 'desc'
+        : 'asc';
+
+    setReport(null);
+    setRequestError('');
+    setLoading(true);
+    setQuery((previous) => ({
+      ...previous,
+      page: 1,
+      sortBy: column.key,
+      sortDirection,
+    }));
+  }
+
+  function getShipmentValue(shipment, column) {
+    if (column.key === 'clientName') {
+      return (
+        shipment.clientName ||
+        shipment.senderName ||
+        report?.client?.name
+      );
+    }
+
+    if (column.key === 'status') {
+      return shipment.status || 'Tracking unavailable';
+    }
+
+    if (
+      column.key === 'deliveredDate' &&
+      shipment.status !== 'Delivered'
+    ) {
+      return null;
+    }
+
+    return shipment[column.previewKey];
   }
 
   const shipments = report?.shipments || [];
@@ -317,13 +363,17 @@ export default function MisReportPanel({
       ? firstRow + shipments.length - 1
       : 0;
 
+  const selectedColumns = MIS_EXPORT_COLUMNS.filter(
+    (column) => exportColumnKeys.includes(column.key)
+  );
+
   return (
     <section className={s.card}>
       <div className={s.cardHeader}>
         <h2>3. Client MIS report</h2>
         <p>
-          Select a client and PUDO booking-date range to
-          preview the shipment report.
+          View a client&#39;s current shipment snapshot, search
+          consignments, and customize the report columns.
         </p>
       </div>
 
@@ -381,6 +431,21 @@ export default function MisReportPanel({
                 }
               />
             </label>
+
+            <label className={s.field}>
+              <span>Consignment number (optional)</span>
+
+              <input
+                type="search"
+                value={consignmentSearch}
+                maxLength={80}
+                placeholder="Search consignment"
+                disabled={loading}
+                onChange={(event) =>
+                  setConsignmentSearch(event.target.value)
+                }
+              />
+            </label>
           </div>
 
           <div className={s.actions}>
@@ -395,10 +460,10 @@ export default function MisReportPanel({
         </form>
 
         <fieldset className={s.exportColumns}>
-          <legend>Excel report columns</legend>
+          <legend>MIS columns</legend>
           <p className={s.help}>
-            Choose the shipment details to include in your Excel
-            report. Received By is included by default.
+            Choose the columns to show in the live report and
+            downloaded Excel. Received By is included by default.
           </p>
 
           <div className={s.exportColumnGrid}>
@@ -514,84 +579,99 @@ export default function MisReportPanel({
                       {report.client?.name || 'Client'} shipment
                       report — booking dates {query.from} to{' '}
                       {query.to}
+                      {query.search
+                        ? ` · Consignment contains ${query.search}`
+                        : ''}
                     </caption>
 
                     <thead>
                       <tr>
-                        {DISPLAY_COLUMNS.map((column) => (
-                          <th key={column} scope="col">
-                            {column}
-                          </th>
-                        ))}
+                        {selectedColumns.map((column) => {
+                          const isSorted =
+                            query.sortBy === column.key;
+
+                          return (
+                            <th
+                              key={column.key}
+                              scope="col"
+                              aria-sort={
+                                isSorted
+                                  ? query.sortDirection === 'asc'
+                                    ? 'ascending'
+                                    : 'descending'
+                                  : 'none'
+                              }
+                            >
+                              {column.sortable === false ? (
+                                column.header
+                              ) : (
+                                <button
+                                  type="button"
+                                  className={s.sortButton}
+                                  disabled={loading}
+                                  onClick={() =>
+                                    changeSort(column)
+                                  }
+                                >
+                                  {column.header}
+                                  <span aria-hidden="true">
+                                    {isSorted
+                                      ? query.sortDirection === 'asc'
+                                        ? ' ▲'
+                                        : ' ▼'
+                                      : ' ↕'}
+                                  </span>
+                                </button>
+                              )}
+                            </th>
+                          );
+                        })}
                       </tr>
                     </thead>
 
                     <tbody>
                       {shipments.map((shipment) => (
                         <tr key={shipment.id}>
-                          <td>
-                            <strong>
-                              {shipment.consignmentNo}
-                            </strong>
-                          </td>
+                          {selectedColumns.map((column) => {
+                            const value = getShipmentValue(
+                              shipment,
+                              column
+                            );
 
-                          <td>
-                            {formatDeliveredDate(
-                              shipment.bookingDate
-                            )}
-                          </td>
-
-                          <td>
-                            {shipment.clientName ||
-                              shipment.senderName ||
-                              '—'}
-                          </td>
-
-                          <td>
-                            {shipment.recipientName || '—'}
-                          </td>
-
-                          <td className={s.addressCell}>
-                            {shipment.recipientAddress || '—'}
-                          </td>
-
-                          <td>
-                            {shipment.destinationLocation ||
-                              '—'}
-                          </td>
-
-                          <td>
-                            {shipment.pincode || '—'}
-                          </td>
-
-                          <td>
-                            <span>
-                              {shipment.status ||
-                                'Tracking unavailable'}
-                            </span>
-
-                            {shipment.needsReview && (
-                              <span
-                                className={s.reviewFlag}
-                                title={
-                                  shipment.reviewReason ||
-                                  'This shipment needs review.'
+                            return (
+                              <td
+                                key={column.key}
+                                className={
+                                  column.key === 'recipientAddress'
+                                    ? s.addressCell
+                                    : undefined
                                 }
                               >
-                                Needs review
-                              </span>
-                            )}
-                          </td>
+                                {column.key === 'consignmentNo' ? (
+                                  <strong>{value || '—'}</strong>
+                                ) : column.date ? (
+                                  formatReportDate(value)
+                                ) : (
+                                  value == null || value === ''
+                                    ? '—'
+                                    : value
+                                )}
 
-                          <td>
-                            {shipment.status === 'Delivered'
-                              ? formatDeliveredDate(
-                                  shipment.deliveredAt
-                                )
-                              : '—'}
-                          </td>
-
-                          <td>{shipment.receivedBy || '—'}</td>
+                                {column.key === 'status' &&
+                                  shipment.needsReview && (
+                                    <span
+                                      className={s.reviewFlag}
+                                      title={
+                                        shipment.reviewReason ||
+                                        'This shipment needs review.'
+                                      }
+                                    >
+                                      Needs review
+                                    </span>
+                                  )}
+                              </td>
+                            );
+                          })}
                         </tr>
                       ))}
                     </tbody>

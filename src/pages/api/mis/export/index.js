@@ -2,8 +2,8 @@ import ExcelJS from 'exceljs';
 
 import {
   apiError,
-  optionalDate,
   queryString,
+  optionalDate,
   requireUuid,
   withMisWorkspace,
 } from '../../../../lib/misApi';
@@ -100,6 +100,15 @@ export default withMisWorkspace(
       );
     }
 
+    const search = queryString(req.query.q, 'Search');
+
+    if (search.length > 80) {
+      throw apiError(
+        400,
+        'Consignment search must not exceed 80 characters.'
+      );
+    }
+
     const requestedFields = queryString(
       req.query.fields,
       'Export fields'
@@ -171,6 +180,7 @@ export default withMisWorkspace(
         p_client_id: clientId,
         p_from: from,
         p_to: to,
+        p_search: search,
       }
     );
 
