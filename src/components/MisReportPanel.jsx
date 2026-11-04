@@ -224,7 +224,9 @@ export default function MisReportPanel({
       }
 
       setDownloadNotice(
-        'Excel download started for the previewed client and date range.'
+        `Excel download started for the previewed ${
+          exportQuery.clientId ? 'client' : 'all clients'
+        } and date range.`
       );
     } catch (error) {
       setDownloadError(
@@ -241,11 +243,6 @@ export default function MisReportPanel({
     setDownloadError('');
     setDownloadNotice('');
     setValidationError('');
-
-    if (!clientId) {
-      setValidationError('Please select a reporting client.');
-      return;
-    }
 
     if (!from || !to) {
       setValidationError(
@@ -370,9 +367,9 @@ export default function MisReportPanel({
   return (
     <section className={s.card}>
       <div className={s.cardHeader}>
-        <h2>3. Client MIS report</h2>
+        <h2>3. Shipment MIS report</h2>
         <p>
-          View a client&#39;s current shipment snapshot, search
+          View shipments for one client or all clients, search
           consignments, and customize the report columns.
         </p>
       </div>
@@ -385,13 +382,12 @@ export default function MisReportPanel({
 
               <select
                 value={clientId}
-                required
                 disabled={loading}
                 onChange={(event) =>
                   setClientId(event.target.value)
                 }
               >
-                <option value="">Select client</option>
+                <option value="">All clients</option>
 
                 {clients.map((client) => (
                   <option
@@ -452,7 +448,7 @@ export default function MisReportPanel({
             <button
               type="submit"
               className={s.primary}
-              disabled={loading || !clients.length}
+              disabled={loading}
             >
               {loading ? 'Loading report…' : 'Preview MIS'}
             </button>
@@ -490,13 +486,6 @@ export default function MisReportPanel({
           </div>
         </fieldset>
 
-        {!clients.length && (
-          <p className={s.help}>
-            Create a reporting client above before using
-            this report.
-          </p>
-        )}
-
         {validationError && (
           <div className={s.error} role="alert">
             {validationError}
@@ -520,7 +509,8 @@ export default function MisReportPanel({
             <div className={s.reportSummary}>
               <div>
                 <h3>
-                  {report.client?.name || 'Client MIS'}
+                  {report.client?.name ||
+                    (query.clientId ? 'Client MIS' : 'All clients MIS')}
                 </h3>
 
                 <p className={s.help}>
@@ -563,10 +553,11 @@ export default function MisReportPanel({
                 <strong>No shipments found.</strong>
 
                 <p>
-                  Check the booking dates and client mapping.
-                  Confirm the PUDO import to create any missing
-                  clients and save their customer-name mappings,
-                  then preview this report again.
+                  Check the booking dates
+                  {query.clientId ? ' and client mapping' : ''}.
+                  {query.clientId
+                    ? ' Confirm the PUDO import to create any missing clients and save their customer-name mappings, then preview this report again.'
+                    : ' Confirm the PUDO import if shipments are missing, then preview this report again.'}
                 </p>
               </div>
             ) : (
@@ -576,7 +567,7 @@ export default function MisReportPanel({
                     className={`${s.table} ${s.reportTable}`}
                   >
                     <caption className={s.reportCaption}>
-                      {report.client?.name || 'Client'} shipment
+                      {report.client?.name || 'All clients'} shipment
                       report — booking dates {query.from} to{' '}
                       {query.to}
                       {query.search

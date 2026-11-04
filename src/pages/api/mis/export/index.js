@@ -71,10 +71,10 @@ function safeFilePart(value) {
 export default withMisWorkspace(
   ['GET'],
   async (req, res, { workspaceId, supabase }) => {
-    const clientId = requireUuid(
-      queryString(req.query.clientId, 'Client ID'),
-      'Client ID'
-    );
+    const rawClientId = queryString(req.query.clientId, 'Client ID');
+    const clientId = rawClientId
+      ? requireUuid(rawClientId, 'Client ID')
+      : null;
 
     const from = optionalDate(
       req.query.from,
@@ -150,24 +150,29 @@ export default withMisWorkspace(
       );
     }
 
-    // Confirm the selected client belongs to this workspace.
-    const {
-      data: client,
-      error: clientError,
-    } = await supabase
-      .from('mis_clients')
-      .select('id, name')
-      .eq('workspace_id', workspaceId)
-      .eq('id', clientId)
-      .maybeSingle();
+    let client = null;
 
-    if (clientError) throw clientError;
+    if (clientId) {
+      const {
+        data,
+        error: clientError,
+      } = await supabase
+        .from('mis_clients')
+        .select('id, name')
+        .eq('workspace_id', workspaceId)
+        .eq('id', clientId)
+        .maybeSingle();
 
-    if (!client) {
-      throw apiError(
-        404,
-        'Client not found in your workspace.'
-      );
+      if (clientError) throw clientError;
+
+      if (!data) {
+        throw apiError(
+          404,
+          'Client not found in your workspace.'
+        );
+      }
+
+      client = data;
     }
 
     const {
@@ -200,7 +205,9 @@ export default withMisWorkspace(
     if (!rows.length) {
       throw apiError(
         404,
-        'No shipments match this client and booking-date range.'
+        `No shipments match ${
+          client ? 'this client' : 'any client'
+        } and booking-date range.`
       );
     }
 
@@ -210,7 +217,9 @@ export default withMisWorkspace(
     workbook.created = new Date();
     workbook.modified = new Date();
 
-    const sheet = workbook.addWorksheet('Client MIS');
+    const sheet = workbook.addWorksheet(
+      client ? 'Client MIS' : 'All Clients MIS'
+    );
 
     sheet.views = [
       {
@@ -245,7 +254,11 @@ export default withMisWorkspace(
             if (column.key === 'clientName') {
               return [
                 column.key,
-                text(client.name || shipment.sender_name),
+                text(
+                  shipment.client_name ||
+                    client?.name ||
+                    shipment.sender_name
+                ),
               ];
             }
 
@@ -360,7 +373,7 @@ export default withMisWorkspace(
     }
 
     const fileName =
-      `DTDC-MIS-${safeFilePart(client.name)}-` +
+      `DTDC-MIS-${safeFilePart(client?.name || 'all-clients')}-` +
       `${from}-to-${to}.xlsx`;
 
     res.setHeader(
