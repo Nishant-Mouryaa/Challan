@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import styles from '../styles/form.module.css';
 import { authenticatedFetch } from '../lib/supabaseClient';
 
-const ClientSelector = ({ onSelect, selectedClientId }) => {
+const ClientSelector = ({
+  onSelect,
+  selectedClientId,
+  onClientsLoaded = () => {},
+}) => {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isCustom, setIsCustom] = useState(false);
@@ -18,6 +22,7 @@ const ClientSelector = ({ onSelect, selectedClientId }) => {
       if (!response.ok) throw new Error('Failed to fetch clients');
       const data = await response.json();
       setClients(data);
+      onClientsLoaded(data);
     } catch (error) {
       console.error('Error fetching clients:', error);
       setLoadError(error.message || 'Unable to load clients');

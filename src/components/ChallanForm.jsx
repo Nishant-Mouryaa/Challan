@@ -6,6 +6,7 @@ import SenderSelector from './SenderSelector';
 import ClientSelector from './ClientSelector';
 import ItemsTable from './ItemsTable';
 import ChallanPreview from './ChallanPreview';
+import ChallanAddressScanner from './ChallanAddressScanner';
 import { useChallan } from '../hooks/useChallan';
 
 const ChallanForm = ({ initialData = null }) => {
@@ -26,6 +27,8 @@ const ChallanForm = ({ initialData = null }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [hasScannedDraft, setHasScannedDraft] = useState(false);
+  const [savedClients, setSavedClients] = useState([]);
 
   const handleSenderSelect = (sender) => {
     if (sender) {
@@ -62,6 +65,33 @@ const ChallanForm = ({ initialData = null }) => {
   const handleReceiverInputChange = (field, value) => {
     updateReceiverDetails({
       [field]: value,
+    });
+  };
+
+  const handleAddressDraft = (recipient) => {
+    updateReceiverDetails({
+      clientId: null,
+      name: recipient.name || '',
+      address: recipient.address || '',
+      city: recipient.city || '',
+      state: recipient.state || '',
+      pin: recipient.pin || '',
+      contactNo: recipient.contactNo || '',
+      email: '',
+    });
+    setHasScannedDraft(true);
+    document.getElementById('receiver-details')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  };
+
+  const handleMatchedClient = (client) => {
+    handleClientSelect(client);
+    setHasScannedDraft(true);
+    document.getElementById('receiver-details')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
     });
   };
 
@@ -172,9 +202,23 @@ const ChallanForm = ({ initialData = null }) => {
       {/* Receiver Details */}
       <fieldset id="receiver-details" className={`${styles.fieldset} ${workspace.sectionCard}`}>
         <legend className={styles.legend}>Receiver Details</legend>
+        {!initialData && (
+          <ChallanAddressScanner
+            clients={savedClients}
+            onDraftReady={handleAddressDraft}
+            onClientMatch={handleMatchedClient}
+          />
+        )}
+        {hasScannedDraft && (
+          <p className={workspace.addressReviewNote} role="status">
+            Scanned challan draft — review and edit the recipient fields below.
+            This draft is not saved until you choose Save Challan.
+          </p>
+        )}
         <ClientSelector
           onSelect={handleClientSelect}
           selectedClientId={challanData.receiverDetails.clientId}
+          onClientsLoaded={setSavedClients}
         />
 
         <div className={styles.formRow}>

@@ -76,3 +76,11 @@ The billing page offers Starter at ₹499/month (100 documents per month) and Bu
 5. Set `NEXT_PUBLIC_SUPPORT_EMAIL` if Enterprise inquiries should go to a dedicated address. Keep all credentials out of source control.
 
 The checkout flow and webhook are configured for Razorpay test mode. Before accepting real payments, a deliberate live-mode rollout is required, including code/configuration changes, live plans and credentials, and end-to-end live testing.
+
+## Mobile challan address scanning
+
+The create-challan form can use a phone camera or uploaded photo to prefill a new, unsaved challan draft. OCR runs in the browser with Tesseract.js, so the photo is not uploaded to this app or an OCR provider. On first use, the browser downloads the OCR worker, WebAssembly engine, and English language model from jsDelivr; these may be cached for later scans. This removes per-scan OCR API charges but the initial download requires an internet connection and OCR speed depends on the device.
+
+If the recognized name or phone matches a saved client, the form offers that client as a suggestion. The user must explicitly select a match; the app never silently substitutes saved details. The scanned fields remain editable, and scanning only prefills an unsaved challan draft.
+
+Scanned address extraction and client matching are best-effort and may misread text or suggest an incorrect match. Always review the recipient name, address, city, state, PIN code, phone, and selected client details before saving or printing.

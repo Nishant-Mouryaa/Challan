@@ -239,6 +239,114 @@
   border-radius: 7px;
 }
 
+.addressScan {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 16px;
+  background: var(--color-gray-50, #f8f9fa);
+  border: 1px solid var(--color-border-light, #e7eaee);
+  border-radius: 9px;
+}
+
+.addressScan > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.addressScan strong {
+  color: var(--color-text-primary, #1b1f27);
+  font-size: 13px;
+}
+
+.addressScan p {
+  margin: 0;
+  color: var(--color-text-secondary, #5a6270);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.addressScan button {
+  min-height: 44px;
+  width: 100%;
+  font-size: 13px;
+}
+
+.addressScanInput {
+  display: none;
+}
+
+.addressScanStatus,
+.addressScanSuccess,
+.addressScanError {
+  overflow-wrap: anywhere;
+}
+
+.addressScanSuccess {
+  color: #17623a !important;
+}
+
+.addressScanError {
+  color: #7f1325 !important;
+}
+
+.addressScanText {
+  width: 100%;
+  color: var(--color-text-secondary, #5a6270);
+  font-size: 11px;
+}
+
+.addressScanMatches {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+.addressScanMatches p {
+  margin: 0;
+}
+
+.addressScanMatches button {
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 40px;
+  text-align: left;
+}
+
+.addressScanText summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.addressScanText pre {
+  max-height: 220px;
+  margin-top: 8px;
+  padding: 10px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: #fff;
+  border: 1px solid var(--color-border-light, #e7eaee);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.addressReviewNote {
+  margin: 0 0 14px;
+  padding: 11px 13px;
+  color: #17623a;
+  background: var(--color-success-light, #e3f5ea);
+  border: 1px solid #b7e3c8;
+  border-radius: 7px;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
 .summary {
   position: sticky;
   top: 24px;
