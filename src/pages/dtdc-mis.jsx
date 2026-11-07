@@ -68,6 +68,11 @@ export default function DtdcMisPage() {
   const [sourceType, setSourceType] = useState('pudo');
   const [file, setFile] = useState(null);
   const [result, setResult] = useState(null);
+  const [resultSourceType, setResultSourceType] = useState('');
+  const [syncedSources, setSyncedSources] = useState({
+    pudo: false,
+    workspace: false,
+  });
 
   const [clients, setClients] = useState([]);
   const [clientName, setClientName] = useState('');
@@ -108,9 +113,32 @@ export default function DtdcMisPage() {
     setNotice('');
   };
 
+  const selectSource = (nextSource) => {
+    if (busy) return;
+
+    setSourceType(nextSource);
+    setFile(null);
+    clearPreview();
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const selectGuidedSource = (nextSource) => {
+    selectSource(nextSource);
+    window.requestAnimationFrame(() => {
+      fileInputRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    });
+  };
+
   const runImport = async (preview) => {
     if (!file || busy) return;
 
+    const importedSource = sourceType;
     setBusy(preview ? 'preview' : 'import');
     setError('');
     setNotice('');
@@ -132,12 +160,26 @@ export default function DtdcMisPage() {
       );
 
       setResult(data);
+      setResultSourceType(importedSource);
 
       if (!preview) {
+        setSyncedSources((previous) => ({
+          ...previous,
+          [importedSource]: true,
+        }));
         setReportRefreshToken((previous) => previous + 1);
         setNotice(
           'Import completed. Valid records were processed; conflicts were not overwritten.'
         );
+
+        setFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+
+        if (importedSource === 'pudo') {
+          setSourceType('workspace');
+        }
 
         try {
           await loadClients();
@@ -214,6 +256,122 @@ export default function DtdcMisPage() {
             </span>
           </header>
 
+          <section className={s.syncGuide} aria-labelledby="daily-sync-title">
+            <div className={s.syncGuideHeader}>
+              <div>
+                <h2 id="daily-sync-title">Daily guided sync</h2>
+                <p>
+                  Download each report from its portal, then preview and
+                  confirm the import below. This guide does not access your
+                  portal accounts.
+                </p>
+              </div>
+              <button
+                type="button"
+                className={s.textButton}
+                disabled={Boolean(busy)}
+                onClick={() =>
+                  setSyncedSources({ pudo: false, workspace: false })
+                }
+              >
+                Reset checklist
+              </button>
+            </div>
+
+            <ol className={s.syncSteps}>
+              <li className={s.syncStep}>
+                <span className={s.syncStepNumber}>1</span>
+                <div>
+                  <strong>Download bookings from PUDO</strong>
+                  <p>Sign in and save the bookings report as a CSV file.</p>
+                  <a
+                    className={s.syncLink}
+                    href="https://efrbooking.dtdc.in/#!/new_booking/customer_details"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Open PUDO portal
+                  </a>
+                </div>
+              </li>
+
+              <li className={s.syncStep}>
+                <span className={s.syncStepNumber}>2</span>
+                <div>
+                  <strong>Import the PUDO bookings</strong>
+                  <p>
+                    {syncedSources.pudo
+                      ? 'PUDO bookings imported in this session.'
+                      : 'Choose the downloaded CSV, preview it, then confirm.'}
+                  </p>
+                  <button
+                    type="button"
+                    className={s.syncAction}
+                    disabled={Boolean(busy)}
+                    onClick={() => selectGuidedSource('pudo')}
+                  >
+                    Use PUDO import
+                  </button>
+                </div>
+              </li>
+
+              <li className={s.syncStep}>
+                <span className={s.syncStepNumber}>3</span>
+                <div>
+                  <strong>Download tracking from Workspace</strong>
+                  <p>Sign in and save the bulk tracking report.</p>
+                  <a
+                    className={s.syncLink}
+                    href="https://workspace.dtdc.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Open Workspace portal
+                  </a>
+                </div>
+              </li>
+
+              <li className={s.syncStep}>
+                <span className={s.syncStepNumber}>4</span>
+                <div>
+                  <strong>Import tracking updates</strong>
+                  <p>
+                    {syncedSources.workspace
+                      ? 'Workspace tracking imported in this session.'
+                      : 'Choose the downloaded CSV or XLSX, preview it, then confirm.'}
+                  </p>
+                  <button
+                    type="button"
+                    className={s.syncAction}
+                    disabled={Boolean(busy)}
+                    onClick={() => selectGuidedSource('workspace')}
+                  >
+                    Use Workspace import
+                  </button>
+                </div>
+              </li>
+
+              <li className={s.syncStep}>
+                <span className={s.syncStepNumber}>5</span>
+                <div>
+                  <strong>Preview and download the MIS</strong>
+                  <p>
+                    Choose the PUDO booking-date range, preview the report,
+                    and download Excel.
+                  </p>
+                  <a className={s.syncLink} href="#mis-report">
+                    Go to MIS report
+                  </a>
+                </div>
+              </li>
+            </ol>
+
+            <p className={s.help}>
+              Import progress is shown for this page session only. Resetting
+              the checklist does not remove any imported shipment data.
+            </p>
+          </section>
+
           {error && (
             <div className={s.error} role="alert">
               {error}
@@ -246,15 +404,9 @@ export default function DtdcMisPage() {
                   <select
                     value={sourceType}
                     disabled={Boolean(busy)}
-                    onChange={(event) => {
-                      setSourceType(event.target.value);
-                      setFile(null);
-                      clearPreview();
-
-                      if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
-                      }
-                    }}
+                    onChange={(event) =>
+                      selectSource(event.target.value)
+                    }
                   >
                     <option value="pudo">
                       PUDO — bookings and customers
@@ -443,8 +595,8 @@ export default function DtdcMisPage() {
               <div className={s.cardHeader}>
                 <h2>
                   {result.preview
-                    ? 'Import preview'
-                    : 'Import result'}
+                    ? `${resultSourceType === 'workspace' ? 'Workspace' : 'PUDO'} import preview`
+                    : `${resultSourceType === 'workspace' ? 'Workspace' : 'PUDO'} import result`}
                 </h2>
 
                 <p>

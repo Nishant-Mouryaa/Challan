@@ -365,7 +365,7 @@ export default function MisReportPanel({
   );
 
   return (
-    <section className={s.card}>
+    <section className={s.card} id="mis-report">
       <div className={s.cardHeader}>
         <h2>3. Shipment MIS report</h2>
         <p>
