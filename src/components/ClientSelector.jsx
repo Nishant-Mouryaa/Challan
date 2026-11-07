@@ -6,6 +6,7 @@ const ClientSelector = ({
   onSelect,
   selectedClientId,
   onClientsLoaded = () => {},
+  refreshKey = 0, // bump this number to reload the client list (e.g. after saving a new client)
 }) => {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,23 +14,31 @@ const ClientSelector = ({
   const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
-    fetchClients();
-  }, []);
+    let cancelled = false;
 
-  const fetchClients = async () => {
-    try {
-      const response = await authenticatedFetch('/api/clients');
-      if (!response.ok) throw new Error('Failed to fetch clients');
-      const data = await response.json();
-      setClients(data);
-      onClientsLoaded(data);
-    } catch (error) {
-      console.error('Error fetching clients:', error);
-      setLoadError(error.message || 'Unable to load clients');
-    } finally {
-      setLoading(false);
-    }
-  };
+    const fetchClients = async () => {
+      try {
+        const response = await authenticatedFetch('/api/clients');
+        if (!response.ok) throw new Error('Failed to fetch clients');
+        const data = await response.json();
+        if (cancelled) return;
+        setClients(data);
+        setLoadError('');
+        onClientsLoaded(data);
+      } catch (error) {
+        console.error('Error fetching clients:', error);
+        if (!cancelled) setLoadError(error.message || 'Unable to load clients');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchClients();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
 
   const handleClientChange = (e) => {
     const clientId = e.target.value;
@@ -38,22 +47,32 @@ const ClientSelector = ({
       onSelect(null);
     } else {
       setIsCustom(false);
-      const selectedClient = clients.find((c) => c.id === parseInt(clientId));
+      const selectedClient = clients.find((c) => String(c.id) === clientId);
       onSelect(selectedClient);
     }
   };
 
   if (loading) return <div className={styles.loading}>Loading clients...</div>;
-  if (loadError) return <div className={styles.error} role="alert">{loadError}</div>;
 
   return (
     <div className={styles.formControl}>
       <label>Select Receiver (or Add Custom)</label>
-      <select onChange={handleClientChange} value={selectedClientId || ''} className={styles.formControl}>
+      {loadError && (
+        <div className={styles.error} role="alert">
+          {loadError}. You can still fill in the receiver details manually below.
+        </div>
+      )}
+      <select
+        onChange={handleClientChange}
+        value={selectedClientId == null ? '' : String(selectedClientId)}
+        className={styles.formControl}
+      >
         <option value="">-- Select a Client --</option>
         {clients.map((client) => (
-          <option key={client.id} value={client.id}>
-            {client.name} - {client.city}
+          <option key={client.id} value={String(client.id)}>
+            {client.name}
+            {client.city ? ` - ${client.city}` : ''}
+            {client.pin ? ` (${client.pin})` : ''}
           </option>
         ))}
         <option value="custom">+ Add Custom Receiver</option>

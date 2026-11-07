@@ -758,3 +758,14 @@
     padding: 17px;
   }
 }
+.addressScanWarnings {
+  margin: 0;
+  padding-left: 18px;
+  color: #8a5a00;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.saveClientBox {
+  margin-top: 14px;
+}

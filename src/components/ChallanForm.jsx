@@ -8,6 +8,7 @@ import ItemsTable from './ItemsTable';
 import ChallanPreview from './ChallanPreview';
 import ChallanAddressScanner from './ChallanAddressScanner';
 import { useChallan } from '../hooks/useChallan';
+import { authenticatedFetch } from '../lib/supabaseClient';
 
 const ChallanForm = ({ initialData = null }) => {
   const {
@@ -29,6 +30,9 @@ const ChallanForm = ({ initialData = null }) => {
   const [loading, setLoading] = useState(false);
   const [hasScannedDraft, setHasScannedDraft] = useState(false);
   const [savedClients, setSavedClients] = useState([]);
+  const [clientRefreshKey, setClientRefreshKey] = useState(0);
+  const [savingClient, setSavingClient] = useState(false);
+  const [clientNotice, setClientNotice] = useState({ type: '', text: '' });
 
   const handleSenderSelect = (sender) => {
     if (sender) {
@@ -57,6 +61,7 @@ const ChallanForm = ({ initialData = null }) => {
         state: client.state,
         pin: client.pin,
         contactNo: client.contactNo,
+        contactPerson: client.contactPerson || '',
         email: client.email,
       });
     }
@@ -68,33 +73,38 @@ const ChallanForm = ({ initialData = null }) => {
     });
   };
 
-const handleAddressDraft = (recipient) => {
-  const current = challanData.receiverDetails;
-  const hasTypedData = ['name', 'address', 'city', 'state', 'pin', 'contactNo', 'email']
-    .some((key) => String(current[key] || '').trim());
-  if (hasTypedData && !window.confirm('Replace the receiver details already on this form with the scanned address?')) {
-    return false;
-  }
+  const handleAddressDraft = (recipient) => {
+    const current = challanData.receiverDetails;
+    const hasTypedData = [
+      'name', 'address', 'city', 'state', 'pin', 'contactNo', 'contactPerson', 'email',
+    ].some((key) => String(current[key] || '').trim());
+    if (
+      hasTypedData &&
+      !window.confirm('Replace the receiver details already on this form with the scanned address?')
+    ) {
+      return false;
+    }
 
-  const address = [
-    recipient.address,
-    recipient.contactPerson ? `Attn: ${recipient.contactPerson}` : '',
-  ].filter(Boolean).join('\n');
+    updateReceiverDetails({
+      clientId: null,
+      name: recipient.name || '',
+      contactPerson: recipient.contactPerson || '',
+      address: recipient.address || '',
+      city: recipient.city || '',
+      state: recipient.state || '',
+      pin: recipient.pin || '',
+      contactNo: recipient.contactNo || '',
+      email: recipient.email || '',
+    });
+    setHasScannedDraft(true);
+    setClientNotice({ type: '', text: '' });
+    document.getElementById('receiver-details')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+    return true;
+  };
 
-  updateReceiverDetails({
-    clientId: null,
-    name: recipient.name || '',
-    address,
-    city: recipient.city || '',
-    state: recipient.state || '',
-    pin: recipient.pin || '',
-    contactNo: recipient.contactNo || '',
-    email: recipient.email || '',
-  });
-  setHasScannedDraft(true);
-  document.getElementById('receiver-details')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  return true;
-};
   const handleMatchedClient = (client) => {
     handleClientSelect(client);
     setHasScannedDraft(true);
@@ -104,11 +114,96 @@ const handleAddressDraft = (recipient) => {
     });
   };
 
+  const normalizeForCompare = (value) =>
+    String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+  const handleSaveClient = async () => {
+    const receiver = challanData.receiverDetails;
+    const payload = {
+      name: (receiver.name || '').trim(),
+      address: (receiver.address || '').trim(),
+      city: (receiver.city || '').trim(),
+      state: (receiver.state || '').trim(),
+      pin: (receiver.pin || '').trim(),
+      contactNo: (receiver.contactNo || '').trim(),
+      email: (receiver.email || '').trim(),
+      contactPerson: (receiver.contactPerson || '').trim(),
+    };
+
+    if (!payload.name || !payload.address) {
+      setClientNotice({ type: 'error', text: 'Enter at least the receiver name and address first.' });
+      return;
+    }
+    if (payload.pin && !/^[1-9]\d{5}$/.test(payload.pin)) {
+      setClientNotice({ type: 'error', text: 'PIN code must be 6 digits before saving this client.' });
+      return;
+    }
+
+    const duplicate = savedClients.find((client) => {
+      if (normalizeForCompare(client.name) !== normalizeForCompare(payload.name)) return false;
+      if (client.pin && payload.pin) return client.pin === payload.pin;
+      return normalizeForCompare(client.address) === normalizeForCompare(payload.address);
+    });
+    if (duplicate) {
+      setClientNotice({
+        type: 'error',
+        text: `Already saved as "${duplicate.name}${duplicate.city ? ` - ${duplicate.city}` : ''}". Pick it from the list above.`,
+      });
+      return;
+    }
+
+    setSavingClient(true);
+    setClientNotice({ type: '', text: '' });
+    try {
+      const response = await authenticatedFetch('/api/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || 'Unable to save this client. Please try again.');
+      }
+      setSavedClients((previous) => [...previous, data]);
+      setClientRefreshKey((key) => key + 1);
+      updateReceiverDetails({ clientId: data.id });
+      setClientNotice({ type: 'success', text: 'Saved. Next time this recipient will be matched automatically.' });
+    } catch (saveError) {
+      console.error('Error saving client:', saveError);
+      setClientNotice({ type: 'error', text: saveError.message || 'Unable to save this client.' });
+    } finally {
+      setSavingClient(false);
+    }
+  };
+
   const handleItemChange = (index, updates) => {
     updateItem(index, updates);
   };
 
+  const getReceiverProblem = () => {
+    const receiver = challanData.receiverDetails;
+    if (!String(receiver.name || '').trim()) return 'Receiver name is required.';
+    if (!String(receiver.address || '').trim()) return 'Receiver address is required.';
+    if (!/^[1-9]\d{5}$/.test(String(receiver.pin || '').trim())) {
+      return 'Enter a valid 6-digit PIN code for the receiver.';
+    }
+    const phoneDigits = String(receiver.contactNo || '').replace(/\D/g, '');
+    if (phoneDigits && phoneDigits.length < 10) {
+      return 'The receiver contact number looks incomplete.';
+    }
+    return '';
+  };
+
   const handleSave = async () => {
+    // The "required" attributes do nothing here because the fields are not inside a <form>,
+    // so check the receiver details before saving.
+    const problem = getReceiverProblem();
+    if (problem) {
+      setSuccessMessage(`Error: ${problem}`);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     setLoading(true);
     try {
       await saveChallan();
@@ -228,6 +323,7 @@ const handleAddressDraft = (recipient) => {
           onSelect={handleClientSelect}
           selectedClientId={challanData.receiverDetails.clientId}
           onClientsLoaded={setSavedClients}
+          refreshKey={clientRefreshKey}
         />
 
         <div className={styles.formRow}>
@@ -253,6 +349,17 @@ const handleAddressDraft = (recipient) => {
             />
           </div>
         </div>
+        <div className={styles.formControl}>
+          <label>Contact Person</label>
+          <input
+            type="text"
+            value={challanData.receiverDetails.contactPerson || ''}
+            onChange={(e) => handleReceiverInputChange('contactPerson', e.target.value)}
+            placeholder="Person to ask for at delivery (optional)"
+            className={styles.formControl}
+          />
+        </div>
+
 
         <div className={styles.formControl}>
           <label>Address *</label>
@@ -294,6 +401,8 @@ const handleAddressDraft = (recipient) => {
               value={challanData.receiverDetails.pin}
               onChange={(e) => handleReceiverInputChange('pin', e.target.value)}
               placeholder="6-digit PIN"
+              inputMode="numeric"
+              maxLength={6}
               className={styles.formControl}
               required
             />
@@ -310,6 +419,35 @@ const handleAddressDraft = (recipient) => {
             className={styles.formControl}
           />
         </div>
+
+        {!challanData.receiverDetails.clientId && (
+          <div className={workspace.saveClientBox}>
+            <button
+              type="button"
+              className={`${workspace.button} ${workspace.secondaryButton}`}
+              onClick={handleSaveClient}
+              disabled={
+                savingClient ||
+                !challanData.receiverDetails.name ||
+                !challanData.receiverDetails.address
+              }
+            >
+              {savingClient ? 'Saving client…' : 'Save as client for next time'}
+            </button>
+          </div>
+        )}
+        {clientNotice.text && (
+          <p
+            className={
+              clientNotice.type === 'error'
+                ? workspace.addressScanError
+                : workspace.addressScanSuccess
+            }
+            role={clientNotice.type === 'error' ? 'alert' : 'status'}
+          >
+            {clientNotice.text}
+          </p>
+        )}
       </fieldset>
 
       {/* Items */}

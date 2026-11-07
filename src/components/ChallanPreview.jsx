@@ -98,6 +98,9 @@ const ChallanPreview = ({ challanData, senderData, onClose }) => {
               <div className={styles.party}>
                 <div>TO,</div>
                 <div className={styles.big}>{receiver.name}</div>
+                {receiver.contactPerson && (
+                  <div className={styles.normal}>ATTN: {receiver.contactPerson}</div>
+                )}
                 <div className={styles.pre}>{receiver.address}</div>
                 <div className={styles.big}>
                   {receiver.city} {receiver.pin}

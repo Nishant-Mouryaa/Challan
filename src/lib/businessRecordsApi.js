@@ -2,7 +2,7 @@ import { requireWorkspace } from './apiAuth';
 import { getSupabaseAdmin } from './supabaseAdmin';
 
 const recordFields = {
-  client: ['name', 'address', 'city', 'state', 'pin', 'contactNo', 'email'],
+  client: ['name', 'address', 'city', 'state', 'pin', 'contactNo', 'email', 'contactPerson'],
   sender: [
     'company',
     'careOf',
@@ -17,8 +17,19 @@ const recordFields = {
   product: ['code', 'name', 'category', 'price'],
 };
 
-function normalizeRecord(kind, body) {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) return null;
+const GENERIC_ERROR = 'Please provide valid required fields';
+
+const normalizeText = (value) =>
+  String(value ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+
+// Returns { record } on success or { error } with a message the UI can show.
+export function normalizeRecord(kind, body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return { error: GENERIC_ERROR };
+  }
 
   const record = Object.fromEntries(
     recordFields[kind]
@@ -34,30 +45,51 @@ function normalizeRecord(kind, body) {
           record.price === '' ||
           !Number.isFinite(Number(record.price))
         ) {
-          return null;
+          return { error: 'Price must be a valid number' };
         }
         record.price = Number(record.price);
       }
       continue;
     }
-    if (field in record && typeof record[field] !== 'string') return null;
+    if (field in record && typeof record[field] !== 'string') {
+      return { error: GENERIC_ERROR };
+    }
     if (typeof record[field] === 'string') record[field] = record[field].trim();
   }
-  if (kind === 'client' || kind === 'sender') {
-  if (record.pin && !/^[1-9]\d{5}$/.test(record.pin)) return null;
-  if (record.contactNo && record.contactNo.replace(/\D/g, '').length < 10) return null;
-}
 
-  if (kind === 'client' && (!record.name || !record.address)) return null;
-  if (kind === 'sender' && (!record.company || !record.address)) return null;
+  if (kind === 'client' && (!record.name || !record.address)) {
+    return { error: 'Client name and address are required' };
+  }
+  if (kind === 'sender' && (!record.company || !record.address)) {
+    return { error: 'Sender company and address are required' };
+  }
   if (
     kind === 'product' &&
     (!record.code || !record.name || record.price === undefined || record.price < 0)
   ) {
-    return null;
+    return { error: GENERIC_ERROR };
   }
 
-  return record;
+  if (kind === 'client' || kind === 'sender') {
+    if (record.pin && !/^[1-9]\d{5}$/.test(record.pin)) {
+      return { error: 'PIN code must be 6 digits' };
+    }
+    if (record.contactNo && record.contactNo.replace(/\D/g, '').length < 10) {
+      return { error: 'Contact number must have at least 10 digits' };
+    }
+  }
+  if (kind === 'client' && record.contactPerson && record.contactPerson.length > 80) {
+    return { error: 'Contact person name is too long' };
+  }
+
+  return { record };
+}
+
+// Same client = same name AND same PIN. If either side has no PIN, compare addresses instead.
+export function isSameClient(existing = {}, incoming = {}) {
+  if (normalizeText(existing.name) !== normalizeText(incoming.name)) return false;
+  if (existing.pin && incoming.pin) return existing.pin === incoming.pin;
+  return normalizeText(existing.address) === normalizeText(incoming.address);
 }
 
 function toRecord(row) {
@@ -89,11 +121,28 @@ export async function handleBusinessRecords(req, res, kind) {
       return res.status(200).json(data.map(toRecord));
     }
 
-    const payload = normalizeRecord(kind, req.body);
+    const { record: payload, error: validationError } = normalizeRecord(kind, req.body);
     if (!payload) {
-      return res.status(400).json({ error: 'Please provide valid required fields' });
+      return res.status(400).json({ error: validationError || GENERIC_ERROR });
     }
 
+    if (kind === 'client') {
+      const { data: existing, error: lookupError } = await supabase
+        .from('business_records')
+        .select('id, payload')
+        .eq('workspace_id', access.workspace.id)
+        .eq('kind', 'client');
+
+      if (lookupError) throw lookupError;
+
+      const duplicate = existing.find((row) => isSameClient(row.payload, payload));
+      if (duplicate) {
+        return res.status(409).json({
+          error: 'A saved client with the same name and PIN already exists.',
+          existing: toRecord(duplicate),
+        });
+      }
+    }
 
     const { data, error } = await supabase
       .from('business_records')

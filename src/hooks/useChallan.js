@@ -23,6 +23,7 @@ export const useChallan = (initialData = null) => {
       receiverDetails: {
         clientId: null,
         name: '',
+        contactPerson: '',
         address: '',
         city: '',
         state: '',
@@ -155,6 +156,7 @@ export const useChallan = (initialData = null) => {
       receiverDetails: {
         clientId: null,
         name: '',
+        contactPerson: '',
         address: '',
         city: '',
         state: '',
