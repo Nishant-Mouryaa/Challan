@@ -722,7 +722,7 @@
 @media (max-width: 760px) {
   .page,
   .listPage {
-    padding: 18px;
+    padding: 14px;
   }
 
   .formWorkspace {
@@ -756,6 +756,22 @@
 
   .sectionCard {
     padding: 17px;
+  }
+
+  .page input,
+  .page select,
+  .page textarea {
+    font-size: 16px;
+  }
+
+  .page input,
+  .page select {
+    min-height: 44px;
+  }
+
+  .page .button,
+  .actionButton {
+    min-height: 44px;
   }
 }
 .addressScanWarnings {

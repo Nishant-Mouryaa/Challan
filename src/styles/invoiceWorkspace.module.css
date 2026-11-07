@@ -1358,17 +1358,18 @@
     flex-shrink: 0;
     gap: 5px;
 
-    padding: 7px 8px;
+    min-height: 44px;
+    padding: 8px 10px;
 
-    font-size: 10px;
+    font-size: 12px;
     white-space: nowrap;
   }
 
   .sectionNav a span {
-    width: 17px;
-    height: 17px;
+    width: 20px;
+    height: 20px;
 
-    font-size: 9px;
+    font-size: 10px;
   }
 
   .formFields {
@@ -1428,7 +1429,7 @@
   .field textarea,
   .field select,
   .hsnLookup > input {
-    min-height: 42px;
+    min-height: 44px;
 
     /*
      * Keeps text inputs comfortably readable on small screens.
@@ -1509,7 +1510,7 @@
   .itemsToolbar .button {
     flex-shrink: 0;
 
-    min-height: 35px;
+    min-height: 44px;
     padding: 8px 10px;
 
     font-size: 11px;
