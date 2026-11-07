@@ -43,6 +43,10 @@ function normalizeRecord(kind, body) {
     if (field in record && typeof record[field] !== 'string') return null;
     if (typeof record[field] === 'string') record[field] = record[field].trim();
   }
+  if (kind === 'client' || kind === 'sender') {
+  if (record.pin && !/^[1-9]\d{5}$/.test(record.pin)) return null;
+  if (record.contactNo && record.contactNo.replace(/\D/g, '').length < 10) return null;
+}
 
   if (kind === 'client' && (!record.name || !record.address)) return null;
   if (kind === 'sender' && (!record.company || !record.address)) return null;
@@ -89,6 +93,7 @@ export async function handleBusinessRecords(req, res, kind) {
     if (!payload) {
       return res.status(400).json({ error: 'Please provide valid required fields' });
     }
+
 
     const { data, error } = await supabase
       .from('business_records')

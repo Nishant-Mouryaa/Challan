@@ -1,20 +1,36 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   extractScannedAddress,
-  findSavedClientMatches,
+  rankSavedClientMatches,
+  scoreScannedAddress,
 } from '../lib/scannedAddress';
 import styles from '../styles/challanWorkspace.module.css';
 
-const MAX_COMPRESSED_IMAGE_BYTES = 3 * 1024 * 1024;
-const MAX_IMAGE_DIMENSION = 2000;
+const MIN_SIDE = 1500; // upscale small photos so label text is big enough for OCR
+const MAX_SIDE = 2200;
+const GOOD_ENOUGH = 75; // stop trying more passes once the parse scores this well
+const USABLE = 45; // below this, tell the user to double-check everything
 
-function loadImage(file) {
-  if (typeof createImageBitmap === 'function') {
-    return createImageBitmap(file).catch(() => loadImageElement(file));
-  }
+// Optional: self-host OCR files (set NEXT_PUBLIC_OCR_BASE=/ocr). See notes in chat.
+const OCR_BASE = process.env.NEXT_PUBLIC_OCR_BASE;
+const WORKER_OPTIONS = OCR_BASE
+  ? {
+      workerPath: `${OCR_BASE}/worker.min.js`,
+      corePath: `${OCR_BASE}/core`,
+      langPath: `${OCR_BASE}/lang`,
+    }
+  : {};
 
-  return loadImageElement(file);
-}
+// PSM 3 = automatic layout (handles table-style labels), PSM 6 = one text block.
+const PLAN = [
+  { rotation: 0, psm: '3', label: 'Reading address' },
+  { rotation: 0, psm: '6', label: 'Trying another layout', only: (best) => best < 60 },
+  { rotation: 90, psm: '3', label: 'Trying rotated photo', only: (best) => best < USABLE },
+  { rotation: 270, psm: '3', label: 'Trying rotated photo', only: (best) => best < USABLE },
+  { rotation: 180, psm: '3', label: 'Trying upside-down photo', only: (best) => best < USABLE },
+];
+
+/* ------------------------------ image helpers ------------------------------ */
 
 function loadImageElement(file) {
   return new Promise((resolve, reject) => {
@@ -32,20 +48,56 @@ function loadImageElement(file) {
   });
 }
 
-function canvasToBlob(canvas, quality) {
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (blob) resolve(blob);
-        else reject(new Error('The photo could not be prepared for scanning.'));
-      },
-      'image/jpeg',
-      quality
-    );
-  });
+async function loadImage(file) {
+  if (typeof createImageBitmap === 'function') {
+    try {
+      // respect the phone's EXIF rotation so text is not sideways
+      return await createImageBitmap(file, { imageOrientation: 'from-image' });
+    } catch {
+      try {
+        return await createImageBitmap(file);
+      } catch {
+        /* fall through to <img> */
+      }
+    }
+  }
+  return loadImageElement(file);
 }
 
-async function prepareImage(file) {
+// Grayscale + contrast stretch (2nd to 98th percentile). Helps with glare and shadows.
+function enhance(canvas) {
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const { width, height } = canvas;
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const d = imageData.data;
+  const hist = new Uint32Array(256);
+
+  for (let i = 0; i < d.length; i += 4) {
+    const gray = ((d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000) | 0;
+    d[i] = gray;
+    hist[gray] += 1;
+  }
+
+  const total = width * height;
+  let low = 0;
+  let acc = 0;
+  while (low < 255 && (acc += hist[low]) < total * 0.02) low += 1;
+  let high = 255;
+  acc = 0;
+  while (high > 0 && (acc += hist[high]) < total * 0.02) high -= 1;
+  const range = Math.max(1, high - low);
+
+  for (let i = 0; i < d.length; i += 4) {
+    let v = ((d[i] - low) * 255) / range;
+    v = v < 0 ? 0 : v > 255 ? 255 : v;
+    d[i] = v;
+    d[i + 1] = v;
+    d[i + 2] = v;
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+
+async function prepareCanvas(file) {
   let image;
   try {
     image = await loadImage(file);
@@ -54,41 +106,35 @@ async function prepareImage(file) {
   }
 
   try {
-    const scale = Math.min(
-      1,
-      MAX_IMAGE_DIMENSION / image.width,
-      MAX_IMAGE_DIMENSION / image.height
-    );
+    const longest = Math.max(image.width, image.height);
+    const scale =
+      longest > MAX_SIDE
+        ? MAX_SIDE / longest
+        : longest < MIN_SIDE
+          ? Math.min(MIN_SIDE / longest, 2)
+          : 1;
     const canvas = document.createElement('canvas');
     canvas.width = Math.max(1, Math.round(image.width * scale));
     canvas.height = Math.max(1, Math.round(image.height * scale));
     canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
-
-    for (const quality of [0.86, 0.75, 0.64]) {
-      const blob = await canvasToBlob(canvas, quality);
-      if (blob.size <= MAX_COMPRESSED_IMAGE_BYTES) return blob;
-    }
-
-    throw new Error(
-      'The compressed photo is still too large. Try a closer, smaller photo of just the address label.'
-    );
+    enhance(canvas);
+    return canvas;
   } finally {
     image.close?.();
   }
 }
 
-async function blobToBase64(blob) {
-  const bytes = new Uint8Array(await blob.arrayBuffer());
-  const chunkSize = 0x8000;
-  let binary = '';
-
-  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
-    binary += String.fromCharCode(
-      ...bytes.subarray(offset, offset + chunkSize)
-    );
-  }
-
-  return btoa(binary);
+function rotateCanvas(source, degrees) {
+  if (!degrees) return source;
+  const swap = degrees % 180 !== 0;
+  const canvas = document.createElement('canvas');
+  canvas.width = swap ? source.height : source.width;
+  canvas.height = swap ? source.width : source.height;
+  const ctx = canvas.getContext('2d');
+  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.rotate((degrees * Math.PI) / 180);
+  ctx.drawImage(source, -source.width / 2, -source.height / 2);
+  return canvas;
 }
 
 function hasRecipientDetails(recipient) {
@@ -97,39 +143,55 @@ function hasRecipientDetails(recipient) {
   );
 }
 
+/* -------------------------------- component -------------------------------- */
+
+/**
+ * Props
+ *  clients                 saved clients (for matching)
+ *  onDraftReady(recipient) fill the form; return false if the user declined to overwrite
+ *  onClientMatch(client)   apply a saved client
+ *  autoApplyStrongMatch    auto-use a saved client when exactly one strong match exists
+ *  preload                 download the OCR engine in the background when the form opens
+ */
 export default function ChallanAddressScanner({
   clients,
   onDraftReady,
   onClientMatch,
+  autoApplyStrongMatch = true,
+  preload = true,
 }) {
-  const inputRef = useRef(null);
+  const cameraRef = useRef(null);
+  const galleryRef = useRef(null);
   const workerPromiseRef = useRef(null);
+  const mountedRef = useRef(false);
+  const scanIdRef = useRef(0);
+  const attemptLabelRef = useRef('Reading address');
+  const lastProgressKeyRef = useRef('');
+
   const [scanning, setScanning] = useState(false);
+  const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [warnings, setWarnings] = useState([]);
   const [recognizedText, setRecognizedText] = useState('');
   const [clientMatches, setClientMatches] = useState([]);
-  const [progress, setProgress] = useState(null);
+  const [lastRecipient, setLastRecipient] = useState(null);
+  const [autoApplied, setAutoApplied] = useState(null);
 
-  useEffect(
-    () => () => {
-      if (workerPromiseRef.current) {
-        workerPromiseRef.current
-          .then((worker) => worker.terminate())
-          .catch((workerError) => {
-            console.error('Unable to stop challan OCR worker:', workerError);
-          });
-      }
-    },
-    []
-  );
-
-  const getWorker = () => {
+  const getWorker = useCallback(() => {
     if (!workerPromiseRef.current) {
       workerPromiseRef.current = import('tesseract.js')
         .then(({ createWorker }) =>
           createWorker('eng', 1, {
-            logger: (status) => setProgress(status),
+            ...WORKER_OPTIONS,
+            logger: (m) => {
+              if (!mountedRef.current || m.status !== 'recognizing text') return;
+              // update the UI in 5% steps instead of on every tick
+              const key = String(Math.round((m.progress || 0) * 20));
+              if (key === lastProgressKeyRef.current) return;
+              lastProgressKeyRef.current = key;
+              setStatus(`${attemptLabelRef.current}… ${Math.round((m.progress || 0) * 100)}%`);
+            },
           })
         )
         .catch((workerError) => {
@@ -137,60 +199,152 @@ export default function ChallanAddressScanner({
           throw workerError;
         });
     }
-
     return workerPromiseRef.current;
+  }, []);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    const schedule =
+      typeof window.requestIdleCallback === 'function'
+        ? window.requestIdleCallback.bind(window)
+        : (cb) => window.setTimeout(cb, 1200);
+    const cancel =
+      typeof window.cancelIdleCallback === 'function'
+        ? window.cancelIdleCallback.bind(window)
+        : window.clearTimeout.bind(window);
+    const handle = preload ? schedule(() => getWorker().catch(() => {})) : null;
+
+    return () => {
+      mountedRef.current = false;
+      if (handle !== null) cancel(handle);
+      const pending = workerPromiseRef.current;
+      workerPromiseRef.current = null; // so a StrictMode remount does not reuse a dead worker
+      pending
+        ?.then((worker) => worker.terminate())
+        .catch((workerError) => console.error('Unable to stop OCR worker:', workerError));
+    };
+  }, [getWorker, preload]);
+
+  const resetOutput = () => {
+    setError('');
+    setMessage('');
+    setWarnings([]);
+    setRecognizedText('');
+    setClientMatches([]);
+    setLastRecipient(null);
+    setAutoApplied(null);
   };
 
   const scanPhoto = async (file) => {
-    setError('');
-    setMessage('');
-    setRecognizedText('');
-    setClientMatches([]);
-    setProgress({ status: 'Preparing photo', progress: 0 });
+    const scanId = ++scanIdRef.current;
+    const isCurrent = () => mountedRef.current && scanId === scanIdRef.current;
+    resetOutput();
     setScanning(true);
-    let stage = 'Preparing photo';
+    setStatus('Preparing photo…');
+    let stage = 'prepare';
 
     try {
-      const image = await prepareImage(file);
-      stage = 'Loading on-device OCR';
+      const base = await prepareCanvas(file);
+      if (!isCurrent()) return;
+
+      stage = 'load';
+      setStatus('Loading on-device OCR…');
       const worker = await getWorker();
-      stage = 'Reading photo';
-      const {
-        data: { text = '' },
-      } = await worker.recognize(image);
-      const recipient = extractScannedAddress(text);
-      const matches = findSavedClientMatches(clients, recipient, text);
+      if (!isCurrent()) return;
+
+      stage = 'read';
+      let best = null;
+      for (let i = 0; i < PLAN.length; i += 1) {
+        const step = PLAN[i];
+        if (best && step.only && !step.only(best.score)) continue;
+
+        attemptLabelRef.current = step.label;
+        lastProgressKeyRef.current = '';
+        setStatus(`${step.label}…`);
+        await worker.setParameters({
+          tessedit_pageseg_mode: step.psm,
+          preserve_interword_spaces: '1',
+        });
+        const {
+          data: { text = '' },
+        } = await worker.recognize(rotateCanvas(base, step.rotation));
+        if (!isCurrent()) return;
+
+        const recipient = extractScannedAddress(text);
+        const score = scoreScannedAddress(recipient);
+        if (!best || score > best.score) best = { text, recipient, score };
+        if (best.score >= GOOD_ENOUGH) break;
+      }
+
+      stage = 'parse';
+      const { text, recipient, score } = best;
+      const ranked = rankSavedClientMatches(clients, recipient);
+      const strong = ranked.filter((entry) => entry.strong);
 
       setRecognizedText(text);
-      setClientMatches(matches);
+      setClientMatches(ranked.map((entry) => entry.client));
+      setWarnings(recipient.meta?.warnings || []);
 
       if (!hasRecipientDetails(recipient)) {
         setError(
-          matches.length
-            ? 'The label text was read. Choose a saved-client match below or enter the recipient details manually.'
-            : 'Text was read, but recipient fields could not be identified. Review the recognized text below and enter the address manually.'
+          ranked.length
+            ? 'The label text was read. Choose a saved-client match below or enter the details manually.'
+            : 'Text was read, but no address could be identified. If the label is handwritten, type it manually. Handwriting is not reliable with on-device OCR.'
         );
         return;
       }
 
-      onDraftReady(recipient);
-      setMessage(
-        matches.length
-          ? 'Draft filled from the scan. If a saved-client match appears below, choose it to use those saved details; otherwise review and edit the fields.'
-          : 'Challan draft filled from the scan. Review and edit the recipient details below before previewing or saving.'
-      );
+      const accepted = onDraftReady(recipient);
+      if (accepted === false) {
+        setMessage('Scan discarded. The form was left unchanged.');
+        return;
+      }
+      setLastRecipient(recipient);
+
+      if (autoApplyStrongMatch && strong.length === 1) {
+        onClientMatch(strong[0].client);
+        setAutoApplied(strong[0].client);
+        setMessage(
+          `Matched saved client ${strong[0].client.name}${
+            strong[0].client.city ? ` (${strong[0].client.city})` : ''
+          } and used its saved details. Review before saving.`
+        );
+      } else {
+        setMessage(
+          score < USABLE
+            ? 'Low-confidence read. Check every recipient field carefully before saving.'
+            : ranked.length
+              ? 'Draft filled from the scan. Pick a saved-client match below to use its saved details, or review and edit the fields.'
+              : 'Draft filled from the scan. Review and edit the recipient details before previewing or saving.'
+        );
+      }
     } catch (scanError) {
+      if (!isCurrent()) return;
       console.error('Unable to scan challan address:', scanError);
-      const detail =
-        scanError instanceof Error ? scanError.message : String(scanError);
-      setError(
-        stage === 'Preparing photo'
-          ? detail || 'This photo could not be prepared for scanning.'
-          : `${stage} failed${detail ? `: ${detail}` : '.'} Check your internet connection for the initial OCR download, then try again.`
-      );
+      const detail = scanError instanceof Error ? scanError.message : String(scanError);
+      if (stage === 'prepare') {
+        setError(detail || 'This photo could not be prepared for scanning.');
+      } else if (stage === 'load') {
+        setError(
+          `The on-device OCR engine could not be loaded${detail ? ` (${detail})` : ''}. Check your internet connection for the first download, then try again.`
+        );
+      } else if (stage === 'read') {
+        setError(`Reading the photo failed${detail ? `: ${detail}` : '.'} Try a closer, sharper photo of just the label.`);
+      } else {
+        setError(`The text was read but could not be understood${detail ? `: ${detail}` : '.'}`);
+      }
     } finally {
-      setScanning(false);
+      if (isCurrent()) {
+        setScanning(false);
+        setStatus('');
+      }
     }
+  };
+
+  const handleFile = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (file) scanPhoto(file);
   };
 
   return (
@@ -198,9 +352,8 @@ export default function ChallanAddressScanner({
       <div>
         <strong>Scan recipient address</strong>
         <p>
-          Take a label photo or choose one from your phone. The photo is read
-          on this device and is not uploaded. The challan draft remains
-          editable.
+          Take a photo of the label or pick one from your gallery. The photo is read on this
+          device and is not uploaded. Only the receiver block is used, the sender is ignored.
         </p>
       </div>
 
@@ -208,34 +361,41 @@ export default function ChallanAddressScanner({
         type="button"
         className={`${styles.button} ${styles.primaryButton}`}
         disabled={scanning}
-        onClick={() => inputRef.current?.click()}
+        onClick={() => cameraRef.current?.click()}
       >
-        {scanning ? 'Reading address…' : 'Open camera or choose photo'}
+        {scanning ? 'Reading address…' : 'Take photo of label'}
+      </button>
+      <button
+        type="button"
+        className={`${styles.button} ${styles.secondaryButton}`}
+        disabled={scanning}
+        onClick={() => galleryRef.current?.click()}
+      >
+        Choose photo from gallery
       </button>
       <input
-        ref={inputRef}
+        ref={cameraRef}
         className={styles.addressScanInput}
         type="file"
         accept="image/*"
         capture="environment"
-        aria-label="Take or choose a recipient address photo"
+        aria-label="Take a recipient address photo"
         disabled={scanning}
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          event.target.value = '';
-          if (file) scanPhoto(file);
-        }}
+        onChange={handleFile}
+      />
+      <input
+        ref={galleryRef}
+        className={styles.addressScanInput}
+        type="file"
+        accept="image/*"
+        aria-label="Choose a recipient address photo"
+        disabled={scanning}
+        onChange={handleFile}
       />
 
       {scanning && (
         <p className={styles.addressScanStatus} role="status">
-          {progress?.status === 'recognizing text'
-            ? `Reading address on this device… ${Math.round(
-                (progress.progress || 0) * 100
-              )}%`
-            : progress?.status
-              ? `Preparing on-device OCR: ${progress.status}…`
-              : 'Preparing photo and reading the address…'}
+          {status || 'Reading address…'}
         </p>
       )}
       {message && (
@@ -243,12 +403,32 @@ export default function ChallanAddressScanner({
           {message}
         </p>
       )}
+      {autoApplied && lastRecipient && (
+        <button
+          type="button"
+          className={`${styles.button} ${styles.secondaryButton}`}
+          onClick={() => {
+            onDraftReady(lastRecipient);
+            setAutoApplied(null);
+            setMessage('Switched back to the scanned details. Review and edit before saving.');
+          }}
+        >
+          Use scanned text instead of saved client
+        </button>
+      )}
       {error && (
         <p className={styles.addressScanError} role="alert">
           {error}
         </p>
       )}
-      {clientMatches.length > 0 && (
+      {warnings.length > 0 && (
+        <ul className={styles.addressScanWarnings}>
+          {warnings.map((warning) => (
+            <li key={warning}>{warning}</li>
+          ))}
+        </ul>
+      )}
+      {clientMatches.length > 0 && !autoApplied && (
         <div className={styles.addressScanMatches}>
           <strong>Possible saved-client matches</strong>
           <p>Choose a match to fill the form with its saved details.</p>
@@ -259,6 +439,7 @@ export default function ChallanAddressScanner({
               className={`${styles.button} ${styles.secondaryButton}`}
               onClick={() => {
                 onClientMatch(client);
+                setAutoApplied(null);
                 setMessage(
                   'Saved client details added to the draft. Review and edit the recipient fields before saving.'
                 );
@@ -266,6 +447,7 @@ export default function ChallanAddressScanner({
             >
               Use {client.name}
               {client.city ? ` — ${client.city}` : ''}
+              {client.pin ? ` (${client.pin})` : ''}
             </button>
           ))}
         </div>

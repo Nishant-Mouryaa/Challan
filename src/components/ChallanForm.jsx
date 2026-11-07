@@ -68,24 +68,33 @@ const ChallanForm = ({ initialData = null }) => {
     });
   };
 
-  const handleAddressDraft = (recipient) => {
-    updateReceiverDetails({
-      clientId: null,
-      name: recipient.name || '',
-      address: recipient.address || '',
-      city: recipient.city || '',
-      state: recipient.state || '',
-      pin: recipient.pin || '',
-      contactNo: recipient.contactNo || '',
-      email: '',
-    });
-    setHasScannedDraft(true);
-    document.getElementById('receiver-details')?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start',
-    });
-  };
+const handleAddressDraft = (recipient) => {
+  const current = challanData.receiverDetails;
+  const hasTypedData = ['name', 'address', 'city', 'state', 'pin', 'contactNo', 'email']
+    .some((key) => String(current[key] || '').trim());
+  if (hasTypedData && !window.confirm('Replace the receiver details already on this form with the scanned address?')) {
+    return false;
+  }
 
+  const address = [
+    recipient.address,
+    recipient.contactPerson ? `Attn: ${recipient.contactPerson}` : '',
+  ].filter(Boolean).join('\n');
+
+  updateReceiverDetails({
+    clientId: null,
+    name: recipient.name || '',
+    address,
+    city: recipient.city || '',
+    state: recipient.state || '',
+    pin: recipient.pin || '',
+    contactNo: recipient.contactNo || '',
+    email: recipient.email || '',
+  });
+  setHasScannedDraft(true);
+  document.getElementById('receiver-details')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  return true;
+};
   const handleMatchedClient = (client) => {
     handleClientSelect(client);
     setHasScannedDraft(true);
