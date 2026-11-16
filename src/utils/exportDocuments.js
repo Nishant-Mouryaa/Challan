@@ -25,13 +25,13 @@ I/We further declare that our GSTIN / Know Your Customer (“KYC”) are valid a
 
 This authority letter shall hold good for all proceedings and can be produced before Customs and/or any statutory authority to confirm the authorization hereby given to DHL. The above authorization to DHL supersedes all previous authority letters issued in this behalf and shall remain valid, subsisting and continues until revoked in writing.`;
 
-export const FEDEX_LETTER_BODY = `I/We hereby authorize FedEx and its affiliated companies, customs brokers, and agents to act on our behalf for arranging customs clearance of our export shipments from India, in accordance with applicable laws, rules, regulations, and procedures.
+export const FEDEX_LETTER_BODY = `We authorize FedEx Express Transportation and Supply Chain Services (India) Pvt. Ltd. and the relevant FedEx entities, affiliates, customs brokers, and agents to assist with customs clearance for shipments tendered by or addressed to us, as permitted by applicable laws and regulations.
 
-I/We authorize FedEx to prepare, sign, submit, and file on our behalf, physically or electronically, the forms and documents required for transportation, customs clearance, or delivery of our shipments, including e-way bills and shipping bills, as permitted by applicable law. I/We will provide accurate information and supporting documents and remain responsible for declarations made to regulatory authorities based on our documents and instructions.
+We authorize those parties to submit the shipment declarations and supporting documents we provide, and to coordinate the steps needed to move our shipments through customs. They may rely on the shipment details and instructions supplied by us and may request clarification or additional documents when needed.
 
-I/We confirm that our GSTIN and Know Your Customer (KYC) documents are valid and authorize FedEx to use them while transporting and clearing our shipments.
+Where allowed, we authorize FedEx to prepare or submit electronic transport documents using information supplied by us. We remain responsible for the accuracy of our shipment, tax, product, value, and consignee declarations.
 
-This authorization may be produced before Customs or any statutory authority to confirm the authority granted to FedEx. It remains valid until revoked in writing and supersedes previous authorization letters issued to FedEx.`;
+This authorization remains valid until revoked by us in writing. It may be presented to customs authorities as confirmation of the authority granted for our shipments.`;
 
 export const buildCertificateDefaults = (inv) => {
   const c = inv.consignorDetails || {};
@@ -88,13 +88,22 @@ export const buildFedExAuthorisationDefaults = (inv) => {
   const c = inv.consignorDetails || {};
   return {
     body: FEDEX_LETTER_BODY,
-    courierName: 'FedEx',
     company: c.company || '',
     gstin: c.gstin || '',
     signerName: inv.signatoryName ? `MR ${inv.signatoryName}` : '',
     designation: inv.signatoryDesignation || '',
     date: toDMY(inv.invoiceDate),
     mobile: inv.signatoryMobile || '',
+    individualKycDocuments: [
+      'Passport copy with address page',
+      'Aadhaar card',
+      'PAN card',
+      'Voter ID card',
+    ].join('\n'),
+    businessKycDocuments: [
+      'GSTIN registration document',
+      'IEC number / document',
+    ].join('\n'),
   };
 };
 

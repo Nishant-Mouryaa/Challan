@@ -148,6 +148,100 @@
   justify-content: space-between;
 }
 
+/* ---------- FedEx authorisation and KYC letter ---------- */
+.fedexLetter {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 8.5pt;
+  line-height: 4.2mm;
+}
+
+.fedexDate {
+  margin-bottom: 5mm;
+}
+
+.fedexTo {
+  margin-bottom: 5mm;
+}
+
+.fedexTitle {
+  margin: 4mm 0 5mm;
+  font-size: 10.5pt;
+  line-height: 5mm;
+  text-align: center;
+  text-decoration: underline;
+}
+
+.fedexClause {
+  display: grid;
+  grid-template-columns: 7mm 1fr;
+  gap: 1mm;
+  margin-bottom: 3mm;
+}
+
+.fedexClause p,
+.fedexKycIntro {
+  margin: 0;
+  text-align: justify;
+}
+
+.fedexKycIntro {
+  margin: 4mm 0 2mm;
+}
+
+.fedexKycTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8pt;
+  line-height: 3.8mm;
+}
+
+.fedexKycTable th,
+.fedexKycTable td {
+  padding: 1.5mm;
+  border: 1px solid #000;
+  text-align: left;
+  vertical-align: top;
+}
+
+.fedexKycTable th {
+  font-weight: 700;
+}
+
+.fedexKycOption {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5mm;
+  margin-top: 1mm;
+}
+
+.fedexCheckbox {
+  flex: 0 0 3mm;
+  width: 3mm;
+  height: 3mm;
+  margin-top: 0.3mm;
+  border: 1px solid #000;
+  box-sizing: border-box;
+}
+
+.fedexConfirmation {
+  margin-top: 4mm;
+}
+
+.fedexSignatory {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2mm 8mm;
+  margin-top: 6mm;
+}
+
+.fedexSignature {
+  grid-column: 2;
+  min-height: 16mm;
+  padding-top: 8mm;
+  border-bottom: 1px solid #000;
+  text-align: center;
+}
+
 /* ---------- print ---------- */
 @media print {
   .noPrint { display: none !important; }

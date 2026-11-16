@@ -233,9 +233,7 @@ const AuthorisationSheet = ({ d: letter }) => {
   return (
     <div className={d.letter}>
       <div className={d.lTitle}>
-        {letter.courierName
-          ? `Authorization to ${letter.courierName} for Export shipment`
-          : 'Authorization for Export shipment'}
+        Authorization for Export shipment
       </div>
 
       <div className={d.lSub}>
@@ -281,6 +279,106 @@ const AuthorisationSheet = ({ d: letter }) => {
             <br />
             Mobile No:
           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const FedExAuthorisationSheet = ({ d: letter }) => {
+  const paragraphs = String(letter.body || '')
+    .split(/\n\s*\n/)
+    .filter(Boolean);
+
+  const renderKycOptions = (value) =>
+    String(value || '')
+      .split('\n')
+      .map((option) => option.trim())
+      .filter(Boolean)
+      .map((option, index) => (
+        <div
+          key={`${index}-${option}`}
+          className={d.fedexKycOption}
+        >
+          <span className={d.fedexCheckbox} aria-hidden="true" />
+          <span>{option}</span>
+        </div>
+      ));
+
+  return (
+    <div className={d.fedexLetter}>
+      <div className={d.fedexDate}>Date: {letter.date}</div>
+
+      <div className={d.fedexTo}>
+        <div>To,</div>
+        <div>
+          FedEx Express Transportation and Supply Chain
+          Services (India) Pvt. Ltd.
+        </div>
+        <div>Boomerang, Unit 801, 8th Floor, A-Wing</div>
+        <div>Chandivali Farm Road, Andheri (E)</div>
+        <div>Mumbai - 400072</div>
+      </div>
+
+      <h2 className={d.fedexTitle}>
+        SHIPPER AUTHORISATION AND KYC DETAILS
+      </h2>
+
+      {paragraphs.map((paragraph, index) => (
+        <div key={index} className={d.fedexClause}>
+          <span>{index + 1}.</span>
+          <p>{paragraph}</p>
+        </div>
+      ))}
+
+      <p className={d.fedexKycIntro}>
+        Please mark the applicable Know Your Customer (KYC)
+        documents enclosed with this authorisation.
+      </p>
+
+      <table className={d.fedexKycTable}>
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Category</th>
+            <th scope="col">Documents to enclose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1.</td>
+            <td>Individual</td>
+            <td>
+              <strong>Any one of the following:</strong>
+              {renderKycOptions(letter.individualKycDocuments)}
+            </td>
+          </tr>
+          <tr>
+            <td>2.</td>
+            <td>Firm, company, or institution</td>
+            <td>
+              <strong>Applicable business documents:</strong>
+              {renderKycOptions(letter.businessKycDocuments)}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div className={d.fedexConfirmation}>
+        We confirm that the information and documents supplied
+        with this authorisation are accurate and belong to the
+        shipper named below.
+      </div>
+
+      <div className={d.fedexSignatory}>
+        <div>Company / Shipper: {letter.company}</div>
+        <div>GSTIN: {letter.gstin}</div>
+        <div>Authorised signatory: {letter.signerName}</div>
+        <div>Designation: {letter.designation}</div>
+        <div>Mobile: {letter.mobile}</div>
+        <div>Date: {letter.date}</div>
+        <div className={d.fedexSignature}>
+          Signature and company stamp
         </div>
       </div>
     </div>
@@ -357,6 +455,18 @@ const AUTHORISATION_FIELDS = [
   }),
 ];
 
+const FEDEX_AUTHORISATION_FIELDS = [
+  ...AUTHORISATION_FIELDS,
+  F('individualKycDocuments', 'Individual KYC document options', {
+    rows: 4,
+    wide: true,
+  }),
+  F('businessKycDocuments', 'Business KYC document options', {
+    rows: 2,
+    wide: true,
+  }),
+];
+
 /* =========================================================
    DOCUMENT REGISTRY
    ========================================================= */
@@ -384,7 +494,7 @@ const DOCUMENT_META = {
   fedex_authorization: {
     category: 'Authorizations & KYC',
     description:
-      'Authorize FedEx to handle customs clearance for your shipment.',
+      'Editable shipper authorisation and KYC checklist. Confirm document requirements with FedEx before use.',
   },
 
   packing: {
@@ -472,9 +582,9 @@ const DOCUMENTS = [
     label: 'FedEx Authorisation',
     file: 'FedEx-Authorisation',
     build: buildFedExAuthorisationDefaults,
-    fields: AUTHORISATION_FIELDS,
-    Sheet: AuthorisationSheet,
-    side: 25,
+    fields: FEDEX_AUTHORISATION_FIELDS,
+    Sheet: FedExAuthorisationSheet,
+    side: 16,
     margins: PLAIN_MARGINS,
     letterhead: true,
   },
