@@ -94,6 +94,21 @@ export default withMisWorkspace(
       throw apiError(400, 'Status is too long.');
     }
 
+    const deliveryStatus =
+      queryString(req.query.deliveryStatus, 'Delivery status') ||
+      'all';
+
+    if (
+      !['all', 'delivered', 'not-delivered'].includes(
+        deliveryStatus
+      )
+    ) {
+      throw apiError(
+        400,
+        'Delivery status must be all, delivered, or not-delivered.'
+      );
+    }
+
     const sortKey =
       queryString(req.query.sortBy, 'Sort field') ||
       'bookingDate';
@@ -195,6 +210,14 @@ export default withMisWorkspace(
 
     if (status) {
       query = query.eq('current_status', status);
+    }
+
+    if (deliveryStatus === 'delivered') {
+      query = query.eq('current_status', 'Delivered');
+    } else if (deliveryStatus === 'not-delivered') {
+      query = query.or(
+        'current_status.neq.Delivered,current_status.is.null'
+      );
     }
 
     if (search) {

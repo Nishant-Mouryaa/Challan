@@ -9,6 +9,28 @@ const DEFAULT_EXPORT_COLUMN_KEYS = MIS_EXPORT_COLUMNS
   .filter((column) => column.defaultSelected)
   .map((column) => column.key);
 
+function buildShipmentParams(query, page, pageSize) {
+  const params = new URLSearchParams({
+    clientId: query.clientId,
+    from: query.from,
+    to: query.to,
+    page: String(page),
+    pageSize: String(pageSize),
+    sortBy: query.sortBy,
+    sortDirection: query.sortDirection,
+    deliveryStatus: query.deliveryStatus,
+
+    // Matches the existing endpoint's parent-only reporting.
+    includeChildren: 'false',
+  });
+
+  if (query.search) {
+    params.set('q', query.search);
+  }
+
+  return params;
+}
+
 function formatReportDate(value) {
   if (!value) return '—';
 
@@ -35,6 +57,7 @@ export default function MisReportPanel({
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [consignmentSearch, setConsignmentSearch] = useState('');
+  const [deliveryStatus, setDeliveryStatus] = useState('all');
   const [exportColumnKeys, setExportColumnKeys] = useState(
     DEFAULT_EXPORT_COLUMN_KEYS
   );
@@ -42,6 +65,9 @@ export default function MisReportPanel({
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState('');
   const [downloadNotice, setDownloadNotice] = useState('');
+  const [copying, setCopying] = useState(false);
+  const [copyError, setCopyError] = useState('');
+  const [copyNotice, setCopyNotice] = useState('');
 
   // The submitted filters are kept separate from editable inputs.
   const [query, setQuery] = useState(null);
@@ -63,22 +89,11 @@ export default function MisReportPanel({
       setReport(null);
 
       try {
-        const params = new URLSearchParams({
-          clientId: query.clientId,
-          from: query.from,
-          to: query.to,
-          page: String(query.page),
-          pageSize: String(PAGE_SIZE),
-          sortBy: query.sortBy,
-          sortDirection: query.sortDirection,
-
-          // Matches the existing endpoint's parent-only reporting.
-          includeChildren: 'false',
-        });
-
-        if (query.search) {
-          params.set('q', query.search);
-        }
+        const params = buildShipmentParams(
+          query,
+          query.page,
+          PAGE_SIZE
+        );
 
         const data = await requestJson(
           `/api/mis/shipments?${params.toString()}`
@@ -125,6 +140,7 @@ export default function MisReportPanel({
       !report ||
       loading ||
       downloading ||
+      copying ||
       !report.pagination?.total
     ) {
       return;
@@ -136,6 +152,7 @@ export default function MisReportPanel({
       from: query.from,
       to: query.to,
       fields: exportColumnKeys.join(','),
+      deliveryStatus: query.deliveryStatus,
     };
 
     if (query.search) {
@@ -237,11 +254,123 @@ export default function MisReportPanel({
     }
   }
 
+  async function copyConsignmentNumbers() {
+    if (
+      !query ||
+      !report ||
+      loading ||
+      downloading ||
+      copying ||
+      !report.pagination?.total
+    ) {
+      return;
+    }
+
+    setCopying(true);
+    setCopyError('');
+    setCopyNotice('');
+
+    try {
+      const firstPage = await requestJson(
+        `/api/mis/shipments?${buildShipmentParams(
+          query,
+          1,
+          200
+        ).toString()}`
+      );
+
+      if (
+        !Array.isArray(firstPage.shipments) ||
+        !firstPage.pagination ||
+        !Number.isInteger(firstPage.pagination.total) ||
+        !Number.isInteger(firstPage.pagination.totalPages) ||
+        firstPage.pagination.total < 1 ||
+        firstPage.pagination.totalPages < 1
+      ) {
+        throw new Error(
+          'The shipment API returned an unexpected report format.'
+        );
+      }
+
+      const expectedTotal = firstPage.pagination.total;
+      const totalPages = firstPage.pagination.totalPages;
+      const allShipments = [...firstPage.shipments];
+
+      for (let page = 2; page <= totalPages; page += 1) {
+        const data = await requestJson(
+          `/api/mis/shipments?${buildShipmentParams(
+            query,
+            page,
+            200
+          ).toString()}`
+        );
+
+        if (
+          !Array.isArray(data.shipments) ||
+          !data.pagination ||
+          data.pagination.total !== expectedTotal ||
+          data.pagination.totalPages !== totalPages
+        ) {
+          throw new Error(
+            'The matching shipments changed while copying. Preview again and retry.'
+          );
+        }
+
+        allShipments.push(...data.shipments);
+      }
+
+      if (allShipments.length !== expectedTotal) {
+        throw new Error(
+          'The matching shipments changed while copying. Preview again and retry.'
+        );
+      }
+
+      const consignmentNumbers = allShipments.map(
+        (shipment) => shipment.consignmentNo
+      );
+
+      if (
+        consignmentNumbers.some(
+          (number) =>
+            typeof number !== 'string' || !number.trim()
+        )
+      ) {
+        throw new Error(
+          'One or more matching shipments are missing a consignment number.'
+        );
+      }
+
+      if (!navigator.clipboard?.writeText) {
+        throw new Error(
+          'Clipboard access is unavailable. Use a secure browser connection and allow clipboard access.'
+        );
+      }
+
+      await navigator.clipboard.writeText(
+        consignmentNumbers
+          .map((number) => number.trim())
+          .join('\n')
+      );
+
+      setCopyNotice(
+        `Copied ${consignmentNumbers.length} matching consignment numbers (${deliveryStatusLabel.toLowerCase()}) to the clipboard.`
+      );
+    } catch (error) {
+      setCopyError(
+        error.message || 'The consignment numbers could not be copied.'
+      );
+    } finally {
+      setCopying(false);
+    }
+  }
+
   function handlePreview(event) {
     event.preventDefault();
 
     setDownloadError('');
     setDownloadNotice('');
+    setCopyError('');
+    setCopyNotice('');
     setValidationError('');
 
     if (!from || !to) {
@@ -267,6 +396,7 @@ export default function MisReportPanel({
       from,
       to,
       search: consignmentSearch.trim(),
+      deliveryStatus,
       page: 1,
       sortBy: 'bookingDate',
       sortDirection: 'desc',
@@ -364,13 +494,20 @@ export default function MisReportPanel({
     (column) => exportColumnKeys.includes(column.key)
   );
 
+  const deliveryStatusLabel = {
+    all: 'All statuses',
+    delivered: 'Delivered',
+    'not-delivered': 'Not delivered',
+  }[query?.deliveryStatus || 'all'];
+
   return (
     <section className={s.card} id="mis-report">
       <div className={s.cardHeader}>
         <h2>3. Shipment MIS report</h2>
         <p>
-          View shipments for one client or all clients, search
-          consignments, and customize the report columns.
+          Filter shipments by client, booking date, consignment
+          number, and delivery status, then copy matching
+          consignment numbers or download the report.
         </p>
       </div>
 
@@ -442,7 +579,28 @@ export default function MisReportPanel({
                 }
               />
             </label>
+
+            <label className={s.field}>
+              <span>Shipment status</span>
+
+              <select
+                value={deliveryStatus}
+                disabled={loading}
+                onChange={(event) =>
+                  setDeliveryStatus(event.target.value)
+                }
+              >
+                <option value="all">All statuses</option>
+                <option value="delivered">Delivered</option>
+                <option value="not-delivered">Not delivered</option>
+              </select>
+            </label>
           </div>
+
+          <p className={s.help}>
+            Not delivered includes any status other than
+            Delivered, including shipments without tracking data.
+          </p>
 
           <div className={s.actions}>
             <button
@@ -531,6 +689,7 @@ export default function MisReportPanel({
                 className={s.primary}
                 disabled={
                   downloading ||
+                  copying ||
                   loading ||
                   total === 0
                 }
@@ -539,6 +698,22 @@ export default function MisReportPanel({
                 {downloading
                   ? 'Preparing Excel…'
                   : 'Download Excel'}
+              </button>
+
+              <button
+                type="button"
+                className={s.secondary}
+                disabled={
+                  downloading ||
+                  copying ||
+                  loading ||
+                  total === 0
+                }
+                onClick={copyConsignmentNumbers}
+              >
+                {copying
+                  ? 'Copying numbers…'
+                  : 'Copy consignment numbers'}
               </button>
             </div>
 
@@ -573,6 +748,7 @@ export default function MisReportPanel({
                       {query.search
                         ? ` · Consignment contains ${query.search}`
                         : ''}
+                      {` · ${deliveryStatusLabel}`}
                     </caption>
 
                     <thead>
@@ -727,6 +903,18 @@ export default function MisReportPanel({
         {downloadNotice && (
           <div className={s.success} role="status">
             {downloadNotice}
+          </div>
+        )}
+
+        {copyError && (
+          <div className={s.error} role="alert">
+            {copyError}
+          </div>
+        )}
+
+        {copyNotice && (
+          <div className={s.success} role="status">
+            {copyNotice}
           </div>
         )}
       </div>

@@ -109,6 +109,21 @@ export default withMisWorkspace(
       );
     }
 
+    const deliveryStatus =
+      queryString(req.query.deliveryStatus, 'Delivery status') ||
+      'all';
+
+    if (
+      !['all', 'delivered', 'not-delivered'].includes(
+        deliveryStatus
+      )
+    ) {
+      throw apiError(
+        400,
+        'Delivery status must be all, delivered, or not-delivered.'
+      );
+    }
+
     const requestedFields = queryString(
       req.query.fields,
       'Export fields'
@@ -186,6 +201,7 @@ export default withMisWorkspace(
         p_from: from,
         p_to: to,
         p_search: search,
+        p_delivery_status: deliveryStatus,
       }
     );
 
