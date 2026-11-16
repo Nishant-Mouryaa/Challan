@@ -190,20 +190,32 @@ export default withMisWorkspace(
       client = data;
     }
 
+    const exportParams = {
+      p_workspace_id: workspaceId,
+      p_client_id: clientId,
+      p_from: from,
+      p_to: to,
+      p_search: search,
+    };
+
+    if (deliveryStatus !== 'all') {
+      exportParams.p_delivery_status = deliveryStatus;
+    }
+
     const {
       data: rows,
       error: exportError,
     } = await supabase.rpc(
       'get_mis_export_rows',
-      {
-        p_workspace_id: workspaceId,
-        p_client_id: clientId,
-        p_from: from,
-        p_to: to,
-        p_search: search,
-        p_delivery_status: deliveryStatus,
-      }
+      exportParams
     );
+
+    if (exportError?.code === 'PGRST202' && deliveryStatus !== 'all') {
+      throw apiError(
+        503,
+        'Status-filtered Excel exports are not ready yet. Apply the latest MIS database migration and try again.'
+      );
+    }
 
     if (exportError) throw exportError;
 
