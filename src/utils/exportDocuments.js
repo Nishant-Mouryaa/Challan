@@ -25,6 +25,14 @@ I/We further declare that our GSTIN / Know Your Customer (“KYC”) are valid a
 
 This authority letter shall hold good for all proceedings and can be produced before Customs and/or any statutory authority to confirm the authorization hereby given to DHL. The above authorization to DHL supersedes all previous authority letters issued in this behalf and shall remain valid, subsisting and continues until revoked in writing.`;
 
+export const FEDEX_LETTER_BODY = `I/We hereby authorize FedEx and its affiliated companies, customs brokers, and agents to act on our behalf for arranging customs clearance of our export shipments from India, in accordance with applicable laws, rules, regulations, and procedures.
+
+I/We authorize FedEx to prepare, sign, submit, and file on our behalf, physically or electronically, the forms and documents required for transportation, customs clearance, or delivery of our shipments, including e-way bills and shipping bills, as permitted by applicable law. I/We will provide accurate information and supporting documents and remain responsible for declarations made to regulatory authorities based on our documents and instructions.
+
+I/We confirm that our GSTIN and Know Your Customer (KYC) documents are valid and authorize FedEx to use them while transporting and clearing our shipments.
+
+This authorization may be produced before Customs or any statutory authority to confirm the authority granted to FedEx. It remains valid until revoked in writing and supersedes previous authorization letters issued to FedEx.`;
+
 export const buildCertificateDefaults = (inv) => {
   const c = inv.consignorDetails || {};
   const e = inv.consigneeDetails || {};
@@ -76,6 +84,19 @@ export const buildAuthorisationDefaults = (inv) => {
   };
 };
 
+export const buildFedExAuthorisationDefaults = (inv) => {
+  const c = inv.consignorDetails || {};
+  return {
+    body: FEDEX_LETTER_BODY,
+    courierName: 'FedEx',
+    company: c.company || '',
+    gstin: c.gstin || '',
+    signerName: inv.signatoryName ? `MR ${inv.signatoryName}` : '',
+    designation: inv.signatoryDesignation || '',
+    date: toDMY(inv.invoiceDate),
+    mobile: inv.signatoryMobile || '',
+  };
+};
 
 export const fmtDate = (d, sep = '/') => {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d || '');

@@ -7,6 +7,7 @@ import ui from '../styles/documentCenter.module.css';
 import {
   buildCertificateDefaults,
   buildAuthorisationDefaults,
+  buildFedExAuthorisationDefaults,
 } from '../utils/exportDocuments';
 
 import { EXTRA_DOCS } from './extraDocs';
@@ -232,7 +233,9 @@ const AuthorisationSheet = ({ d: letter }) => {
   return (
     <div className={d.letter}>
       <div className={d.lTitle}>
-        Authorization for Export shipment
+        {letter.courierName
+          ? `Authorization to ${letter.courierName} for Export shipment`
+          : 'Authorization for Export shipment'}
       </div>
 
       <div className={d.lSub}>
@@ -378,6 +381,12 @@ const DOCUMENT_META = {
       'Authorize DHL to handle customs clearance for your shipment.',
   },
 
+  fedex_authorization: {
+    category: 'Authorizations & KYC',
+    description:
+      'Authorize FedEx to handle customs clearance for your shipment.',
+  },
+
   packing: {
     category: 'Shipping documents',
     description:
@@ -451,6 +460,18 @@ const DOCUMENTS = [
     label: 'DHL Authorisation',
     file: 'DHL-Authorisation',
     build: buildAuthorisationDefaults,
+    fields: AUTHORISATION_FIELDS,
+    Sheet: AuthorisationSheet,
+    side: 25,
+    margins: PLAIN_MARGINS,
+    letterhead: true,
+  },
+
+  {
+    id: 'fedex_authorization',
+    label: 'FedEx Authorisation',
+    file: 'FedEx-Authorisation',
+    build: buildFedExAuthorisationDefaults,
     fields: AUTHORISATION_FIELDS,
     Sheet: AuthorisationSheet,
     side: 25,
@@ -1093,6 +1114,8 @@ const ExportDocumentsModal = ({
       EXTRA_DOCS.forEach((doc) => {
         extraDocuments[doc.id] = values[doc.id];
       });
+      extraDocuments.fedex_authorization =
+        values.fedex_authorization;
 
       await onSave({
         certificate: values.cert,

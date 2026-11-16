@@ -29,7 +29,7 @@ const invoiceActions = [
   {
     icon: 'globe',
     title: 'Create international invoice',
-    description: 'Export invoice with certificate and DHL authorisation letter.',
+    description: 'Export invoice with a certificate and DHL or FedEx authorisation letter.',
     href: '/international-invoice',
     buttonText: 'Create',
     variant: 'primary',
