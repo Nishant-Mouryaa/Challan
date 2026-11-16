@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 import s from '../styles/invoiceWorkspace.module.css';
 
@@ -13,6 +14,7 @@ import InternationalPartySelectors from './InternationalPartySelectors';
 
 import { useInternationalInvoice } from '../hooks/useInternationalInvoice';
 import { getMode } from '../data/invoiceModes';
+import { authenticatedFetch } from '../lib/supabaseClient';
 
 /* =========================================================
    REUSABLE FIELD
@@ -112,7 +114,9 @@ const SECTION_LINKS = [
    FORM
    ========================================================= */
 
-const InternationalInvoiceForm = () => {
+const InternationalInvoiceForm = ({ invoiceId = null }) => {
+  const router = useRouter();
+
   const {
     invoiceData,
     updateInvoiceData,
@@ -135,7 +139,66 @@ const InternationalInvoiceForm = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [showDocs, setShowDocs] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [invoiceLoading, setInvoiceLoading] = useState(
+    Boolean(invoiceId)
+  );
+  const [loadError, setLoadError] = useState('');
   const [message, setMessage] = useState(null);
+
+  const isEditing = Boolean(invoiceId);
+
+  useEffect(() => {
+    if (!invoiceId) return undefined;
+
+    let cancelled = false;
+
+    async function loadInvoice() {
+      setInvoiceLoading(true);
+      setLoadError('');
+
+      try {
+        const response = await authenticatedFetch(
+          `/api/international-invoices/${encodeURIComponent(invoiceId)}`
+        );
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.error || 'Could not load this invoice.'
+          );
+        }
+
+        if (!data || typeof data !== 'object') {
+          throw new Error(
+            'The server returned an unexpected invoice format.'
+          );
+        }
+
+        if (!cancelled) {
+          updateInvoiceData(data);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Error fetching invoice:', error);
+          setLoadError(
+            error instanceof Error
+              ? error.message
+              : 'Could not load this invoice.'
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setInvoiceLoading(false);
+        }
+      }
+    }
+
+    loadInvoice();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [invoiceId, updateInvoiceData]);
 
   const mode = getMode(invoiceData.mode);
 
@@ -215,14 +278,42 @@ const InternationalInvoiceForm = () => {
     setMessage(null);
 
     try {
-      await saveInvoice();
+      if (invoiceId) {
+        const response = await authenticatedFetch(
+          `/api/international-invoices/${encodeURIComponent(invoiceId)}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(invoiceData),
+          }
+        );
+        const result = await response.json();
 
-      setMessage({
-        type: 'success',
-        text:
-          'Invoice saved successfully. You can continue reviewing it ' +
-          'or use Reset to start a new invoice.',
-      });
+        if (!response.ok) {
+          throw new Error(
+            result.error || 'Could not update the invoice.'
+          );
+        }
+
+        setMessage({
+          type: 'success',
+          text: 'Invoice updated successfully. Returning to all invoices…',
+        });
+        window.setTimeout(() => {
+          router.push('/view-international-invoices');
+        }, 1500);
+      } else {
+        await saveInvoice();
+
+        setMessage({
+          type: 'success',
+          text:
+            'Invoice saved successfully. You can continue reviewing it ' +
+            'or use Reset to start a new invoice.',
+        });
+      }
     } catch (error) {
       console.error('Error saving invoice:', error);
 
@@ -254,6 +345,38 @@ const InternationalInvoiceForm = () => {
     setShowDocs(false);
   };
 
+  if (invoiceLoading) {
+    return (
+      <div className={s.page}>
+        <div
+          className={`${s.alert} ${s.successAlert}`}
+          role="status"
+        >
+          Loading invoice…
+        </div>
+      </div>
+    );
+  }
+
+  if (isEditing && loadError) {
+    return (
+      <div className={s.page}>
+        <div
+          className={`${s.alert} ${s.errorAlert}`}
+          role="alert"
+        >
+          <span>{loadError}</span>
+          <Link
+            href="/view-international-invoices"
+            className={`${s.button} ${s.secondaryButton}`}
+          >
+            Back to all invoices
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={s.page}>
       {/* ================= PAGE HEADER ================= */}
@@ -262,11 +385,14 @@ const InternationalInvoiceForm = () => {
         <div>
           <div className={s.eyebrow}>INTERNATIONAL SHIPPING</div>
 
-          <h1>Create export invoice</h1>
+          <h1>
+            {isEditing ? 'Edit export invoice' : 'Create export invoice'}
+          </h1>
 
           <p>
-            Add shipment details, prepare your invoice, and generate
-            supporting documents.
+            {isEditing
+              ? 'Update shipment details, review the invoice, and manage its supporting documents.'
+              : 'Add shipment details, prepare your invoice, and generate supporting documents.'}
           </p>
         </div>
 
@@ -631,7 +757,9 @@ const InternationalInvoiceForm = () => {
             <div className={s.summaryCard}>
               <div className={s.summaryHeader}>
                 <h2>Invoice summary</h2>
-                <span className={s.badge}>Current form</span>
+                <span className={s.badge}>
+                  {isEditing ? 'Saved invoice' : 'Current form'}
+                </span>
               </div>
 
               <dl className={s.summaryList}>
@@ -681,7 +809,13 @@ const InternationalInvoiceForm = () => {
                   className={`${s.button} ${s.primaryButton}`}
                   disabled={loading}
                 >
-                  {loading ? 'Saving invoice…' : 'Save invoice'}
+                  {loading
+                    ? isEditing
+                      ? 'Updating invoice…'
+                      : 'Saving invoice…'
+                    : isEditing
+                      ? 'Update invoice'
+                      : 'Save invoice'}
                 </button>
 
                 <button
@@ -702,14 +836,23 @@ const InternationalInvoiceForm = () => {
                   Open document center
                 </button>
 
-                <button
-                  type="button"
-                  className={s.resetButton}
-                  disabled={loading}
-                  onClick={handleReset}
-                >
-                  Reset form
-                </button>
+                {isEditing ? (
+                  <Link
+                    href="/view-international-invoices"
+                    className={s.resetButton}
+                  >
+                    Cancel editing
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    className={s.resetButton}
+                    disabled={loading}
+                    onClick={handleReset}
+                  >
+                    Reset form
+                  </button>
+                )}
               </div>
 
               {!canPreview && (
