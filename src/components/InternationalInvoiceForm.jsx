@@ -142,10 +142,13 @@ const InternationalInvoiceForm = ({ invoiceId = null }) => {
   const [invoiceLoading, setInvoiceLoading] = useState(
     Boolean(invoiceId)
   );
+  const [savedInvoiceId, setSavedInvoiceId] = useState(null);
   const [loadError, setLoadError] = useState('');
   const [message, setMessage] = useState(null);
 
   const isEditing = Boolean(invoiceId);
+  const activeInvoiceId = invoiceId || savedInvoiceId;
+  const hasSavedInvoice = Boolean(activeInvoiceId);
 
   useEffect(() => {
     if (!invoiceId) return undefined;
@@ -278,9 +281,9 @@ const InternationalInvoiceForm = ({ invoiceId = null }) => {
     setMessage(null);
 
     try {
-      if (invoiceId) {
+      if (activeInvoiceId) {
         const response = await authenticatedFetch(
-          `/api/international-invoices/${encodeURIComponent(invoiceId)}`,
+          `/api/international-invoices/${encodeURIComponent(activeInvoiceId)}`,
           {
             method: 'PUT',
             headers: {
@@ -299,19 +302,31 @@ const InternationalInvoiceForm = ({ invoiceId = null }) => {
 
         setMessage({
           type: 'success',
-          text: 'Invoice updated successfully. Returning to all invoices…',
+          text: isEditing
+            ? 'Invoice updated successfully. Returning to all invoices…'
+            : 'Invoice updated successfully. Further saves will update this invoice.',
         });
-        window.setTimeout(() => {
-          router.push('/view-international-invoices');
-        }, 1500);
+
+        if (isEditing) {
+          window.setTimeout(() => {
+            router.push('/view-international-invoices');
+          }, 1500);
+        }
       } else {
-        await saveInvoice();
+        const savedInvoice = await saveInvoice();
+
+        if (!savedInvoice?.id) {
+          throw new Error(
+            'The invoice was saved, but its ID was not returned. Open it from all invoices before making more changes.'
+          );
+        }
+
+        setSavedInvoiceId(savedInvoice.id);
 
         setMessage({
           type: 'success',
           text:
-            'Invoice saved successfully. You can continue reviewing it ' +
-            'or use Reset to start a new invoice.',
+            'Invoice saved. Further saves will update this invoice; use Reset form to start another.',
         });
       }
     } catch (error) {
@@ -333,13 +348,16 @@ const InternationalInvoiceForm = ({ invoiceId = null }) => {
   const handleReset = () => {
     if (
       !window.confirm(
-        'Reset this form? Any changes not saved to an invoice will be lost.'
+        savedInvoiceId
+          ? 'Start a new invoice? The saved invoice will remain in your list; unsaved changes will be lost.'
+          : 'Reset this form? Any changes not saved to an invoice will be lost.'
       )
     ) {
       return;
     }
 
     resetForm();
+    setSavedInvoiceId(null);
     setMessage(null);
     setShowPreview(false);
     setShowDocs(false);
@@ -386,13 +404,19 @@ const InternationalInvoiceForm = ({ invoiceId = null }) => {
           <div className={s.eyebrow}>INTERNATIONAL SHIPPING</div>
 
           <h1>
-            {isEditing ? 'Edit export invoice' : 'Create export invoice'}
+            {isEditing
+              ? 'Edit export invoice'
+              : savedInvoiceId
+                ? 'Update saved invoice'
+                : 'Create export invoice'}
           </h1>
 
           <p>
             {isEditing
               ? 'Update shipment details, review the invoice, and manage its supporting documents.'
-              : 'Add shipment details, prepare your invoice, and generate supporting documents.'}
+              : savedInvoiceId
+                ? 'Continue updating this saved invoice, or reset the form to create a new one.'
+                : 'Add shipment details, prepare your invoice, and generate supporting documents.'}
           </p>
         </div>
 
@@ -758,7 +782,7 @@ const InternationalInvoiceForm = ({ invoiceId = null }) => {
               <div className={s.summaryHeader}>
                 <h2>Invoice summary</h2>
                 <span className={s.badge}>
-                  {isEditing ? 'Saved invoice' : 'Current form'}
+                  {hasSavedInvoice ? 'Saved invoice' : 'Current form'}
                 </span>
               </div>
 
@@ -812,8 +836,10 @@ const InternationalInvoiceForm = ({ invoiceId = null }) => {
                   {loading
                     ? isEditing
                       ? 'Updating invoice…'
-                      : 'Saving invoice…'
-                    : isEditing
+                      : hasSavedInvoice
+                        ? 'Updating invoice…'
+                        : 'Saving invoice…'
+                    : hasSavedInvoice
                       ? 'Update invoice'
                       : 'Save invoice'}
                 </button>

@@ -440,6 +440,13 @@
   margin-bottom: 20px;
 }
 
+.partySelectorOptions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 16px;
+}
+
 .partySelector:empty,
 .modeDetails:empty {
   display: none;
@@ -1443,6 +1450,10 @@
 
   .partySelector {
     margin-bottom: 18px;
+  }
+
+  .partySelectorOptions {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .subsection {
