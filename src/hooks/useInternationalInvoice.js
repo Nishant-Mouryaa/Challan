@@ -154,8 +154,12 @@ export const useInternationalInvoice = (initialData = null) => {
   );
 
   const getAmountInWords = useCallback(
-    (amount) => convertAmountToWords(Math.round(amount)),
-    []
+    (amount) => {
+      const words = convertAmountToWords(Math.round(amount), '');
+      const currency = invoiceData.currencyName || invoiceData.currencyCode;
+      return currency ? `${words} ${currency}` : words;
+    },
+    [invoiceData.currencyCode, invoiceData.currencyName]
   );
 
   return {

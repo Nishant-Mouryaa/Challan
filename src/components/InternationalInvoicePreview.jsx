@@ -283,7 +283,7 @@ DATE:{formatDate(invoiceData.invoiceDate)}                  </div>
             <div className={s.foot}>
               <div className={s.footLeft}>
                 <div className={s.words}>
-                  ({convertAmountToWords(Math.round(totalAmount)).toUpperCase()}
+                  ({convertAmountToWords(Math.round(totalAmount), '').toUpperCase()}
                   {invoiceData.currencyName || currency ? ` ${(invoiceData.currencyName || currency).toUpperCase()}` : ''})
                 </div>
                 <div className={s.blank} />

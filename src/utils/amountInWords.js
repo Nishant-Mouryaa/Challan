@@ -63,9 +63,11 @@ const convertThreeDigits = (num) => {
   return result;
 };
 
-export const convertAmountToWords = (amount) => {
+export const convertAmountToWords = (amount, currencyPrefix = 'Rupees') => {
   if (amount === 0) return 'Zero';
-  if (amount < 0) return 'Negative ' + convertAmountToWords(Math.abs(amount));
+  if (amount < 0) {
+    return 'Negative ' + convertAmountToWords(Math.abs(amount), currencyPrefix);
+  }
 
   const parts = [];
   let scaleIndex = 0;
@@ -84,7 +86,8 @@ export const convertAmountToWords = (amount) => {
     scaleIndex++;
   }
 
-  return 'Rupees ' + parts.join(' ').trim();
+  const words = parts.join(' ').trim();
+  return currencyPrefix ? `${currencyPrefix} ${words}` : words;
 };
 
 // Test
