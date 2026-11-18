@@ -19,6 +19,7 @@ const SHIPMENT_COLUMNS = [
   'sender_name',
   'recipient_name',
   'recipient_address',
+  'content',
   'received_by',
   'booking_date',
   'booking_at',
@@ -83,6 +84,15 @@ export default withMisWorkspace(
         400,
         'Consignment search must not exceed 80 characters.'
       );
+    }
+
+    const content = queryString(
+      req.query.content,
+      'Content'
+    );
+
+    if (content.length > 2000) {
+      throw apiError(400, 'Content search is too long.');
     }
 
     const status = queryString(
@@ -227,6 +237,13 @@ export default withMisWorkspace(
       );
     }
 
+    if (content) {
+      query = query.ilike(
+        'content',
+        containsPattern(content)
+      );
+    }
+
     /*
      * Parent shipments only by default.
      *
@@ -315,6 +332,7 @@ export default withMisWorkspace(
 
         recipientName: row.recipient_name,
         recipientAddress: row.recipient_address,
+        content: row.content,
         receivedBy: row.received_by,
         expectedDeliveryDate: row.expected_delivery_date,
         revisedExpectedDeliveryDate:

@@ -329,6 +329,7 @@ const parseWorkspaceRow = (row) => {
       row['Last Status Description']
     ),
     milestone: optionalText(row['Last Milestone']),
+    content: optionalText(row.Content),
     current_status: currentStatus,
     tracking_event_at: eventAt,
 
@@ -351,9 +352,12 @@ const parseWorkspaceRow = (row) => {
     throw new Error('A consignment cannot be its own parent.');
   }
 
+  const fingerprintPatch = { ...patch };
+  delete fingerprintPatch.content;
+
   return {
     ...patch,
-    tracking_fingerprint: fingerprint(patch),
+    tracking_fingerprint: fingerprint(fingerprintPatch),
   };
 };
 

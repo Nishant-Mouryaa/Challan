@@ -201,6 +201,24 @@ export default withMisWorkspace(
 
     if (error) throw error;
 
+    if (!body.preview && body.sourceType === 'workspace') {
+      const rowsWithContent = parsed.rows.filter(
+        (row) => typeof row.content === 'string'
+      );
+
+      if (rowsWithContent.length) {
+        const { error: contentError } = await supabase.rpc(
+          'update_mis_shipment_content',
+          {
+            p_workspace_id: workspaceId,
+            p_rows: rowsWithContent,
+          }
+        );
+
+        if (contentError) throw contentError;
+      }
+    }
+
     return res.status(200).json({
       ...data,
 

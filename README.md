@@ -61,6 +61,8 @@ Saved challans, international invoices, and business setup records are stored in
 6. The migration reserves the legacy workspace for the configured initial owner email. That owner must sign up with the same email to claim its data; other signups create separate empty workspaces. New users can add their own clients, senders, and products under **Business setup**.
 7. Deploy only after the required database migrations and environment variables are configured. The app's API routes require authentication.
 
+For DTDC MIS content filtering, apply [`supabase/migrations/202611180001_mis_content_filter.sql`](./supabase/migrations/202611180001_mis_content_filter.sql) before deploying. Workspace tracking exports imported earlier did not save the Content field; re-import them after applying this migration to populate existing consignments.
+
 International invoice business details and supporting-document defaults now start blank rather than using another business's shared hard-coded data. Fill them in per invoice. Team invitations and multi-user workspace membership are not included yet; each workspace currently has one owner account.
 
 ## Razorpay subscriptions (test mode)

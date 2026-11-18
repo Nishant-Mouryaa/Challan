@@ -43,6 +43,14 @@ const MIS_EXPORT_COLUMNS = [
     defaultSelected: true,
   },
   {
+    key: 'content',
+    header: 'Content',
+    source: 'content',
+    previewKey: 'content',
+    width: 35,
+    defaultSelected: true,
+  },
+  {
     key: 'destinationLocation',
     header: 'Destination Location',
     source: 'destination_city',

@@ -109,6 +109,15 @@ export default withMisWorkspace(
       );
     }
 
+    const content = queryString(
+      req.query.content,
+      'Content'
+    );
+
+    if (content.length > 2000) {
+      throw apiError(400, 'Content search is too long.');
+    }
+
     const deliveryStatus =
       queryString(req.query.deliveryStatus, 'Delivery status') ||
       'all';
@@ -196,11 +205,9 @@ export default withMisWorkspace(
       p_from: from,
       p_to: to,
       p_search: search,
+      p_content: content,
+      p_delivery_status: deliveryStatus,
     };
-
-    if (deliveryStatus !== 'all') {
-      exportParams.p_delivery_status = deliveryStatus;
-    }
 
     const {
       data: rows,
@@ -210,10 +217,10 @@ export default withMisWorkspace(
       exportParams
     );
 
-    if (exportError?.code === 'PGRST202' && deliveryStatus !== 'all') {
+    if (exportError?.code === 'PGRST202') {
       throw apiError(
         503,
-        'Status-filtered Excel exports are not ready yet. Apply the latest MIS database migration and try again.'
+        'Content-filtered Excel exports are not ready yet. Apply the latest MIS database migration and try again.'
       );
     }
 

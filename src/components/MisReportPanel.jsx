@@ -14,6 +14,7 @@ function buildShipmentParams(query, page, pageSize) {
     clientId: query.clientId,
     from: query.from,
     to: query.to,
+    content: query.content,
     page: String(page),
     pageSize: String(pageSize),
     sortBy: query.sortBy,
@@ -57,6 +58,7 @@ export default function MisReportPanel({
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [consignmentSearch, setConsignmentSearch] = useState('');
+  const [contentSearch, setContentSearch] = useState('');
   const [deliveryStatus, setDeliveryStatus] = useState('all');
   const [exportColumnKeys, setExportColumnKeys] = useState(
     DEFAULT_EXPORT_COLUMN_KEYS
@@ -151,6 +153,7 @@ export default function MisReportPanel({
       clientId: query.clientId,
       from: query.from,
       to: query.to,
+      content: query.content,
       fields: exportColumnKeys.join(','),
       deliveryStatus: query.deliveryStatus,
     };
@@ -396,6 +399,7 @@ export default function MisReportPanel({
       from,
       to,
       search: consignmentSearch.trim(),
+      content: contentSearch.trim(),
       deliveryStatus,
       page: 1,
       sortBy: 'bookingDate',
@@ -506,7 +510,7 @@ export default function MisReportPanel({
         <h2>3. Shipment MIS report</h2>
         <p>
           Filter shipments by client, booking date, consignment
-          number, and delivery status, then copy matching
+          number, content, and delivery status, then copy matching
           consignment numbers or download the report.
         </p>
       </div>
@@ -576,6 +580,21 @@ export default function MisReportPanel({
                 disabled={loading}
                 onChange={(event) =>
                   setConsignmentSearch(event.target.value)
+                }
+              />
+            </label>
+
+            <label className={s.field}>
+              <span>Content contains (optional)</span>
+
+              <input
+                type="search"
+                value={contentSearch}
+                maxLength={2000}
+                placeholder="Search shipment content"
+                disabled={loading}
+                onChange={(event) =>
+                  setContentSearch(event.target.value)
                 }
               />
             </label>
@@ -747,6 +766,9 @@ export default function MisReportPanel({
                       {query.to}
                       {query.search
                         ? ` · Consignment contains ${query.search}`
+                        : ''}
+                      {query.content
+                        ? ` · Content contains ${query.content}`
                         : ''}
                       {` · ${deliveryStatusLabel}`}
                     </caption>
